@@ -2,6 +2,7 @@ Type=Exe
 Reference=*\G{00020430-0000-0000-C000-000000000046}#2.0#0#C:\Windows\SysWOW64\stdole2.tlb#OLE Automation
 Reference=*\G{00020813-0000-0000-C000-000000000046}#1.9#0#C:\Program Files (x86)\Microsoft Office\Root\Office16\EXCEL.EXE#Microsoft Excel 16.0 Object Library
 Form=MainForm.frm
+Module=typedef; typedef.bas
 IconForm="MainForm"
 Startup="MainForm"
 HelpFile=""

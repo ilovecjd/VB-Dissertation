@@ -1,8 +1,30 @@
 Attribute VB_Name = "typedef"
-
 Option Explicit
 Option Base 1
 
+'WorkBook 전체의 전역변수를 담을 구조체
+Type EnvExcel
+        SimulationDuration              As Integer  ' 시뮬레이션을 동작 시킬 기간(주)
+        avgProjects                             As Double       ' 주당 발생하는 평균 발주 프로젝트 수
+        Hr_Init_H                       As Integer  ' 최초에 보유한 고급 인력
+        Hr_Init_M                       As Integer  ' 최초에 보유한 중급 인력
+        Hr_Init_L                       As Integer  ' 최초에 보유한 초급 인력
+        Hr_LeadTime                     As Integer  ' 인력 충원에 걸리는 시간
+        Cash_Init                       As Integer  ' 최초 보유 현금
+        Problem                         As Integer  ' 프로젝트 생성 개수 (= 문제의 개수) / MakePrj 함수의 인자
+End Type
+
+' 활동의 정보를 담는 구조체
+Type Activity
+    ActivityType    As Integer  ' 1-분석설계/2-구현/3-단테/4-통테/5-유지보수
+    Duration        As Integer  ' 활동의 기간
+    StartDate       As Integer  ' 활동의 시작
+    EndDate         As Integer  ' 활동의 끝
+    HighSkill       As Integer  ' 필요한 고급 인력 수
+    MidSkill        As Integer  ' 필요한 중급 인력 수
+    LowSkill        As Integer  ' 필요한 초급 인력 수
+End Type
+ 
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''
 ' Define Global Variable
 ' Const Start
@@ -54,9 +76,9 @@ Public gWsActivity_Struct       As Worksheet
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 ' ' 프로그램 동작을 위한 기본 정보들.
-Public gExcelEnv                        As EnvExcel
-Public gOrderTable()            As Variant              ' 발주된 프로젝트들을 관리하는 테이블
-Public gProjectTable()  As clsProject   ' 모든 프로제트들을 담고 있는 테이블
+Public gExcelEnv                As EnvExcel
+Public gOrderTable()    As Variant              ' 발주된 프로젝트들을 관리하는 테이블
+'Public gProjectTable()  As clsProject   ' 모든 프로제트들을 담고 있는 테이블
 
 
 Public gPrintDurationTable()    As Variant              ' 사용하기 편하게 모든 월을 넣어 놓는다.
@@ -65,29 +87,7 @@ Public gPrintDurationTable()    As Variant              ' 사용하기 편하게 모든 �
 
 ' #define end
 '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-'WorkBook 전체의 전역변수를 담을 구조체
-Type EnvExcel
-        SimulationDuration              As Integer  ' 시뮬레이션을 동작 시킬 기간(주)
-        avgProjects                             As Double       ' 주당 발생하는 평균 발주 프로젝트 수
-        Hr_Init_H                       As Integer  ' 최초에 보유한 고급 인력
-        Hr_Init_M                       As Integer  ' 최초에 보유한 중급 인력
-        Hr_Init_L                       As Integer  ' 최초에 보유한 초급 인력
-        Hr_LeadTime                     As Integer  ' 인력 충원에 걸리는 시간
-        Cash_Init                       As Integer  ' 최초 보유 현금
-        Problem                         As Integer  ' 프로젝트 생성 개수 (= 문제의 개수) / MakePrj 함수의 인자
 
-End Type
-
-' 활동의 정보를 담는 구조체
-Type Activity
-    ActivityType    As Integer  ' 1-분석설계/2-구현/3-단테/4-통테/5-유지보수
-    Duration        As Integer  ' 활동의 기간
-    StartDate       As Integer  ' 활동의 시작
-    EndDate         As Integer  ' 활동의 끝
-    HighSkill       As Integer  ' 필요한 고급 인력 수
-    MidSkill        As Integer  ' 필요한 중급 인력 수
-    LowSkill        As Integer  ' 필요한 초급 인력 수
-End Type
 
 
 ' Public functions
@@ -397,7 +397,7 @@ Public Function GetVariableValue(rng As Range, variableName As String) As Varian
     dataArray = rng.Value
 
     ' 변수 이름이 있는 위치를 찾기
-    matchIndex = Application.Match(variableName, Application.index(dataArray, 0, 1), 0)
+    matchIndex = Application.Match(variableName, Application.Index(dataArray, 0, 1), 0)
     
     ' 변수 이름이 있는 경우 값 반환
     If Not IsError(matchIndex) Then
