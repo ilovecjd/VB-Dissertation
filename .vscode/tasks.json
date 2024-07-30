@@ -1,0 +1,109 @@
+
+		// See https://go.microsoft.com/fwlink/?LinkId=733558
+	// for the documentation about the tasks.json format
+	// "\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" > build.log 2>&1"
+	// "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" \"> build.log 2>&1 \" \""
+	// "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" /out \"${workspaceFolder}\\BuildLog.txt\"\""			  
+
+	/*
+	{
+		"version": "2.0.0",
+		"tasks": [
+		  {
+			"label": "Build VB6 Project",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+			  "/c",
+			   // 정상 "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" /out \"${workspaceFolder}\\BuildLog.txt\"\""
+			  //"\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" /out \"${workspaceFolder}\\BuildLog.txt\" && \"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /run \"${workspaceFolder}\\Simulator.vbp\""			  
+			  //"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" /out \"${workspaceFolder}\\BuildLog.txt\" && \"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /run \"${workspaceFolder}\\Simulator.vbp\""
+			], 
+			"group": {
+			  "kind": "build",
+			  "isDefault": true
+			},
+			"problemMatcher": []
+		  }
+		]
+	  }
+
+	  */
+
+	  /*
+	  {
+		"label": "Run VB6 Project",
+		"type": "shell",
+		"command": "cmd",
+		"args": [
+		  "/c",
+		  "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /run \"${workspaceFolder}\\Simulator.vbp\"\""
+		],
+		"group": {
+		  "kind": "build",
+		  "isDefault": true
+		},		
+		"problemMatcher": []
+	  }
+*/
+
+/*
+	  {
+		"version": "2.0.0",
+		"tasks": [
+		  {
+			"label": "Build VB6 Project",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+			  "/c",
+			  "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /make \"${workspaceFolder}\\Simulator.vbp\" /out \"${workspaceFolder}\\BuildLog.txt\"\""
+			],
+			"group": {
+			  "kind": "build",
+			  "isDefault": true
+			},
+			"problemMatcher": []
+		  },
+		  {
+			"label": "Run VB6 Project",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+			  "/c",
+			  "\"\"C:\\Program Files (x86)\\Microsoft Visual Studio\\VB98\\VB6.EXE\" /run \"${workspaceFolder}\\Simulator.vbp\"\""
+			],
+			"group": {
+			  "kind": "none",
+			  "isDefault": false
+			},
+			"dependsOn": "Build VB6 Project",
+			"problemMatcher": []
+		  }
+		]
+	  }
+	  
+
+	  */
+
+	  {
+		"version": "2.0.0",
+		"tasks": [
+		  {
+			"label": "Build and Run VB6 Project",
+			"type": "shell",
+			"command": "cmd",
+			"args": [
+			  "/c",
+			  "${workspaceFolder}\\build_and_run.bat",
+			  "${workspaceFolder}\\Simulator.vbp",
+			  "${workspaceFolder}\\BuildLog.txt"
+			],
+			"group": {
+			  "kind": "build",
+			  "isDefault": true
+			},
+			"problemMatcher": []
+		  }
+		]
+	  }

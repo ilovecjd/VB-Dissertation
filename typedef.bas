@@ -122,7 +122,7 @@ Public Property Get GetOrderTable() As Variant
 End Property
 
 Public Property Get GetProjectTable() As Variant
-        GetProjectTable = gProjectTable
+        'GetProjectTable = gProjectTable
 End Property
 
 
