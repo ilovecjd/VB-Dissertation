@@ -148,6 +148,25 @@ End Enum
 
 Private Sub btnGenBoardNProject_Click()
     
+    Dim Res As Integer
+    
+    If gProjectLoadOrCreate = LoadOrCreate.Load Then
+        Res = MsgBox("기존의 엑셀 파일의 프로젝트들을 그대로 사용 합니다./n 계속 진행 할가요?", vbYesNo, "기본 환경 설정")
+        If (vbNo = Res) Then
+            End ' btnGenBoardNProject_Click 함수 종료
+        Else
+            
+        End If
+    Else
+        Res = MsgBox("엑셀파일을 지우고 신규 프로젝트들을 생성 합니다./n 계속 진행 할까요?", vbYesNo, "기본 환경 설정")
+        If (vbNo = Res) Then
+            End ' btnGenBoardNProject_Click 함수 종료
+        Else
+            
+        End If
+    End If
+    
+    
     ' 입력값들을 업데이트 한다.
     GlobalEnv.WeeklyProb = txtWeeklyProb.Text
     'GlobalEnv.Cash_Init
@@ -158,9 +177,16 @@ Private Sub btnGenBoardNProject_Click()
     'GlobalEnv.Problem
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
     
+    
+    
+    
+    
+    
+        
+    
     ' 대시보드 생성 또는 로드 -> 프로젝트 생성 또는 로드
     
-        ' 테이블들은 새로 생성하거나 기존것을 로드하거나.
+    ' 테이블들은 새로 생성하거나 기존것을 로드하거나.
     ' 예외 처리는 하지말고 사용자가 조심해서 사용하도록 하자.
     gTableInitialized = (TableInit = 1)
     
@@ -181,8 +207,7 @@ Private Sub btnGenBoardNProject_Click()
 End Sub
 
 ' 프로그램에서 사용할 기본적인 전역변수들을 설정한다.
-' 파일 존재 여부
-' 엑셀 파일 유효성 검사
+' 파일 존재 여부  / 엑셀 파일 유효성 검사
 ' 기본 환경 변수를 어디에서 가져오는가 결정 (엑셀 파일 또는 디폴트 값들)
 ' 버튼클릭 시 ==> 기본 환경변수에 기록된 대로 생성 할것인가?? 엑셀에서 로드할 것인가?
 '
@@ -193,7 +218,7 @@ Private Sub Form_Load()
     ' data.xlsm 파일이 없으면 프로그램 종료, run_log.txt 파일이 없으면 생성 후 계속 진행
     Call CheckFiles
     
-    gProjectLoadOrCreate = LoadOrCreate.Load
+    gProjectLoadOrCreate = LoadOrCreate.Load ' 기본 설정은 엑셀 파일에 기록된 값들을 로드해서 사용
     Option_Load.Value = True
         
         
@@ -207,15 +232,14 @@ Private Sub Form_Load()
     GlobalEnv.Problem = 100
     GlobalEnv.SimulationWeeks = 156 ' 3년(52주 * 3년)
     
-
     
     ' 화면에 보이는 초기 값 설정
     txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '"156"
     txtWeeklyProb.Text = GlobalEnv.WeeklyProb '"1.25"
     
-    Call ModifyExcel ' 사용할 엑셀의 시트 정보 설정
+    Call ModifyExcel ' 사용할 엑셀과 시트의 Object들을 설정한다.
     
-    Prologue
+    ' 사용하지 않는다. Call Prologue
 
     'Call LoadExcelEnv ' 사용할 엑셀의 시트 정보 설정
     
@@ -417,7 +441,6 @@ End Sub
 
 Private Sub Option_Create_Click()
     gProjectLoadOrCreate = LoadOrCreate.Create
-    
 
 End Sub
 

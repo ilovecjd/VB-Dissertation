@@ -16,9 +16,6 @@ Option Explicit
 Option Base 1
 
 ' 출력에 필요한 환경 변수들
-'Public SheetName           As String ' 출력할 시트 이름
-Public InfoWidth            As Integer ' 출력할 시트의 가로 크기
-Public InfoHeight           As Integer ' 출력할 시트의 세로 크기
 Private ProjectInfo()       As Variant ' 출력할 헤더를 기록하는 배열
 
 
@@ -68,10 +65,8 @@ Public Sub SetPrjCashFlows(Value() As Integer)
 End Sub
 
 Private Sub Class_Initialize()
-    InfoWidth = W_INFO
-    InfoHeight = H_INFO
-
-    ReDim ProjectInfo(1 To InfoHeight, 1 To InfoWidth)
+    
+    ReDim ProjectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
     ReDim CashFlows(1 To MAX_N_CF)
     ReDim Activities(1 To MAX_ACT)
 End Sub
@@ -396,7 +391,7 @@ Public Sub PrintProjectHeader()
             MyArray(i + 1) = TempArray(i)
         Next i
         
-        .Range(.Cells(1, 1), .Cells(1, InfoWidth)).Value = MyArray
+        .Range(.Cells(1, 1), .Cells(1, PRJ_SHEET_HEADER_W)).Value = MyArray
 
         strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3"
         TempArray = Split(strHeader, ",")
@@ -407,7 +402,7 @@ Public Sub PrintProjectHeader()
             MyArray(i + 1) = TempArray(i)
         Next i
         
-        .Range(.Cells(2, 1), .Cells(2, InfoWidth)).Value = MyArray
+        .Range(.Cells(2, 1), .Cells(2, PRJ_SHEET_HEADER_W)).Value = MyArray
     End With
     
     Call PrintArrayWithLine(gWsProject, 2, 1, MyArray)
@@ -459,11 +454,11 @@ Public Sub PrintInfo()
         posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).LowSkill
     Next i
 
-    posY = (ProjectNum - 1) * InfoHeight + 4
+    posY = (ProjectNum - 1) * PRJ_SHEET_HEADER_H + 4
 
     With gWsProject
         Dim RNG1 As Object
-        Set RNG1 = .Range(.Cells(posY, 1), .Cells(posY + InfoHeight - 1, InfoWidth))
+        Set RNG1 = .Range(.Cells(posY, 1), .Cells(posY + PRJ_SHEET_HEADER_H - 1, PRJ_SHEET_HEADER_W))
         RNG1.Value = ProjectInfo
         RNG1.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
     End With
