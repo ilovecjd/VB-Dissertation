@@ -81,10 +81,6 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
     ProjectType = initType
     ProjectNum = initNum
 
-    If initNum = 1 Then
-        Call PrintProjectHeader
-    End If
-    
     ' 프로젝트 생성을 위해 필요한 값들을 생성한다.
     OrderDate = ODate ' 발주월
     PossibleStartDate = ODate + Int(Rnd() * 4) ' 시작 가능일
@@ -93,7 +89,6 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
     Experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
     SuccessProbability = 100 '   수주 성공 확률
     NumCashFlows = MAX_N_CF ' 비용 지급 횟수 (규모에 따라 변경 가능)
-
 
     Call CreateActivities
     Call CalculateHRandProfit
@@ -372,42 +367,6 @@ Public Function GenerateWithProbability(probability As Integer) As Integer
     End If
 End Function
 
-' 프로젝트들을 출력할 엑셀 시트에 헤더를 생성한다.
-' VB 6.0에서 Option Base 1을 사용했더라도, Split 함수는 기본적으로 0 기반 배열을 반환
-' 따라서 1 기반 배열로 변환하는 코드를 추가 함
-Public Sub PrintProjectHeader()
-    Dim MyArray() As String, TempArray() As String, strHeader As String
-    Dim i As Integer
-    
-    Call ClearSheet(gWsProject) '시트의 모든 내용을 지우고 셀 병합 해제
-    
-    With gWsProject
-        strHeader = "타입,순번,발주일,시작가능,기간,시작,수익,경험,성공%,nCF,CF1%,CF2%,CF3%,선금,중도,잔금"
-        TempArray = Split(strHeader, ",")
-        
-        ' TempArray를 1 기반 배열로 변환
-        ReDim MyArray(1 To UBound(TempArray) + 1)
-        For i = 0 To UBound(TempArray)
-            MyArray(i + 1) = TempArray(i)
-        Next i
-        
-        .Range(.Cells(1, 1), .Cells(1, PRJ_SHEET_HEADER_W)).Value = MyArray
-
-        strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3"
-        TempArray = Split(strHeader, ",")
-        
-        ' TempArray를 1 기반 배열로 변환
-        ReDim MyArray(1 To UBound(TempArray) + 1)
-        For i = 0 To UBound(TempArray)
-            MyArray(i + 1) = TempArray(i)
-        Next i
-        
-        .Range(.Cells(2, 1), .Cells(2, PRJ_SHEET_HEADER_W)).Value = MyArray
-    End With
-    
-    Call PrintArrayWithLine(gWsProject, 2, 1, MyArray)
-    
-End Sub
 
 ' 프로젝트의 모든 정보를 엑셀에 출력한다.
 Public Sub PrintInfo()

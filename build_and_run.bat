@@ -66,3 +66,4 @@ if %ERRORLEVEL% equ 0 (
     echo 빌드가 실패했습니다. 오류 코드 %ERRORLEVEL%. >> %LOG_FILE_PATH%
     echo 빌드가 실패했습니다. 오류 코드 %ERRORLEVEL%. 
 )
+

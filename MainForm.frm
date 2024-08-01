@@ -151,60 +151,54 @@ Private Sub btnGenBoardNProject_Click()
     Dim Res As Integer
     
     If gProjectLoadOrCreate = LoadOrCreate.Load Then
-        Res = MsgBox("기존의 엑셀 파일의 프로젝트들을 그대로 사용 합니다./n 계속 진행 할가요?", vbYesNo, "기본 환경 설정")
+        Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
-            End ' btnGenBoardNProject_Click 함수 종료
+            Exit Sub ' btnGenBoardNProject_Click 함수 종료
         Else
             
         End If
     Else
-        Res = MsgBox("엑셀파일을 지우고 신규 프로젝트들을 생성 합니다./n 계속 진행 할까요?", vbYesNo, "기본 환경 설정")
+        Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
-            End ' btnGenBoardNProject_Click 함수 종료
+            Exit Sub ' btnGenBoardNProject_Click 함수 종료
+            
         Else
+            ' 입력값들을 업데이트 한다.
+            GlobalEnv.WeeklyProb = txtWeeklyProb.Text
+            'GlobalEnv.Cash_Init
+            'GlobalEnv.Hr_Init_H
+            'GlobalEnv.Hr_Init_L
+            'GlobalEnv.Hr_Init_M
+            'GlobalEnv.Hr_LeadTime
+            'GlobalEnv.Problem
+            GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+            
+            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
+            Dim i As Integer
+            
+        For i = 1 To GlobalEnv.SimulationWeeks
+            gPrintDurationTable(i) = i
+        Next i
+        
+            Call CreateOrderTable ' Order 테이블을 생성
+            Call CreateProjects     ' 프로젝트를 생성한다.
             
         End If
+        
     End If
-    
-    
-    ' 입력값들을 업데이트 한다.
-    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
-    'GlobalEnv.Cash_Init
-    'GlobalEnv.Hr_Init_H
-    'GlobalEnv.Hr_Init_L
-    'GlobalEnv.Hr_Init_M
-    'GlobalEnv.Hr_LeadTime
-    'GlobalEnv.Problem
-    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-    
-    
-    
-    
-    
-    
         
-    
-    ' 대시보드 생성 또는 로드 -> 프로젝트 생성 또는 로드
-    
-    ' 테이블들은 새로 생성하거나 기존것을 로드하거나.
-    ' 예외 처리는 하지말고 사용자가 조심해서 사용하도록 하자.
-    gTableInitialized = (TableInit = 1)
-    
-    If gTableInitialized = False Then
-        Call BuildTables ' 테이블을 새로 생성하고 엑셀에 기록한다.
-        
-        Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
-        Call CreateProjects     ' 프로젝트를 생성한다.
-        
-    Else
-        Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
-    End If
-
-
     Call PrintDashboard ' 대시보드를 시트에 출력한다
-    ' Call PrintProjectHeader ' 프로젝트를 시트에 출력한다
-    ' Call PrintProjectAll ' 프로젝트 전체를 출력한다
+    Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
+    Call PrintProjectAll ' 프로젝트 전체를 출력한다
+    
+    'Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
+
 End Sub
+
+
+
+
+
 
 ' 프로그램에서 사용할 기본적인 전역변수들을 설정한다.
 ' 파일 존재 여부  / 엑셀 파일 유효성 검사
