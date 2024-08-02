@@ -19,9 +19,6 @@ Public Const ACTIVITY_SHEET_NAME = "activity_struct"
 Public GCurrentPath As String
 Public gProjectLoadOrCreate As Integer ' 프로그램 시작시 프로젝트를 생성할지 기존 데이터를 로드할지 결정하는 변수
 
-
-
-Public Const ORDER_PROJECT_TITLE = "발주 프로젝트 현황"
 Public Const P_TYPE_EXTERNAL = 0
 Public Const P_TYPE_INTERNAL = 1
 
@@ -105,14 +102,14 @@ End Property
 ' 전역적으로 사용하는 테이블들을 채운다.
 Sub Prologue(TableInit As Integer)
 
-    Dim I As Integer
+    Dim i As Integer
     
     If gExcelInitialized = False Then
 
         ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-        For I = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(I) = I
-        Next I
+        For i = 1 To GlobalEnv.SimulationWeeks
+            gPrintDurationTable(i) = i
+        Next i
 
         gExcelInitialized = True
     End If
@@ -184,10 +181,10 @@ Private Function LoadProjects() As Boolean
         tempPrj.SuccessProbability = prjInfo(1, 9)
         
         Dim tempCF(1 To MAX_N_CF) As Integer
-        Dim I As Integer
-        For I = 1 To MAX_N_CF
-            tempCF(I) = prjInfo(1, 10 + I)
-        Next I
+        Dim i As Integer
+        For i = 1 To MAX_N_CF
+            tempCF(i) = prjInfo(1, 10 + i)
+        Next i
         tempPrj.SetPrjCashFlows tempCF
 
         tempPrj.FirstPayment = prjInfo(1, 14)
@@ -200,15 +197,15 @@ Private Function LoadProjects() As Boolean
         tempPrj.FinalPaymentMonth = prjInfo(2, 13)
         
         Dim tempAct As Activity
-        For I = 1 To tempPrj.NumActivities
-            tempAct.Duration = prjInfo(2 + I, 2)
-            tempAct.StartDate = prjInfo(2 + I, 3)
-            tempAct.EndDate = prjInfo(2 + I, 4)
-            tempAct.HighSkill = prjInfo(2 + I, 5)
-            tempAct.MidSkill = prjInfo(2 + I, 6)
-            tempAct.LowSkill = prjInfo(2 + I, 7)
+        For i = 1 To tempPrj.NumActivities
+            tempAct.Duration = prjInfo(2 + i, 2)
+            tempAct.StartDate = prjInfo(2 + i, 3)
+            tempAct.EndDate = prjInfo(2 + i, 4)
+            tempAct.HighSkill = prjInfo(2 + i, 5)
+            tempAct.MidSkill = prjInfo(2 + i, 6)
+            tempAct.LowSkill = prjInfo(2 + i, 7)
             'tempPrj.SetPrjActivities i, tempAct
-        Next I
+        Next i
 
         Set gProjectTable(prjID) = tempPrj
     Next prjID
@@ -242,7 +239,7 @@ End Function
 Public Function CreateProjects()
 
     Dim week As Integer
-    Dim id As Integer
+    Dim Id As Integer
     Dim startPrjNum As Integer
     Dim endPrjNum As Integer
     Dim preTotal As Integer
@@ -269,11 +266,11 @@ Public Function CreateProjects()
         If startPrjNum > endPrjNum Then GoTo Continue
 
         ' 이번 주에 발생한 프로젝트들을 생성하고 초기화 한다.
-        For id = startPrjNum To endPrjNum
+        For Id = startPrjNum To endPrjNum
             Set tempPrj = New clsProject
-            Call tempPrj.Init(P_TYPE_EXTERNAL, id, week)
-            Set gProjectTable(id) = tempPrj
-        Next id
+            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, week)
+            Set gProjectTable(Id) = tempPrj
+        Next Id
 
 Continue:
         MainForm.ProgressBar1.value = week
@@ -391,26 +388,26 @@ End Function
 
 Function PrintProjectAll()
     Dim temp As clsProject
-    Dim I As Integer
+    Dim i As Integer
 
-    For I = 1 To gTotalProjectNum
-        Set temp = gProjectTable(I)
+    For i = 1 To gTotalProjectNum
+        Set temp = gProjectTable(i)
         Call temp.PrintInfo
-    Next I
+    Next i
 End Function
 
 Function ConvertToBase1(arr As Variant) As Variant
-    Dim I As Integer
+    Dim i As Integer
     Dim newArr() As Variant
     ReDim newArr(1 To UBound(arr) - LBound(arr) + 1)
-    For I = LBound(arr) To UBound(arr)
-        newArr(I - LBound(arr) + 1) = arr(I)
-    Next I
+    For i = LBound(arr) To UBound(arr)
+        newArr(i - LBound(arr) + 1) = arr(i)
+    Next i
     ConvertToBase1 = newArr
 End Function
 
 Function PivotArray(arr As Variant) As Variant
-    Dim I As Integer
+    Dim i As Integer
     Dim rowCount As Integer
     Dim result() As Variant
     
@@ -421,9 +418,9 @@ Function PivotArray(arr As Variant) As Variant
     ReDim result(1 To rowCount, 1 To 1)
     
     ' 1차원 배열을 2차원 배열로 변환
-    For I = LBound(arr) To UBound(arr)
-        result(I, 1) = arr(I)
-    Next I
+    For i = LBound(arr) To UBound(arr)
+        result(i, 1) = arr(i)
+    Next i
     
     PivotArray = result
 End Function
@@ -483,18 +480,18 @@ End Function
 
 Function FindRowWithKeyword(ws As Object, keyword As String) As Long
     Dim lastRow As Long
-    Dim I As Long
+    Dim i As Long
     
     ' 엑셀 워크시트의 마지막 행 구하기
     lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
 
     ' 1번 열을 순회하며 키워드 찾기
-    For I = 1 To lastRow
-        If InStr(1, ws.Cells(I, 1).value, keyword, vbTextCompare) > 0 Then
-            FindRowWithKeyword = I
+    For i = 1 To lastRow
+        If InStr(1, ws.Cells(i, 1).value, keyword, vbTextCompare) > 0 Then
+            FindRowWithKeyword = i
             Exit Function
         End If
-    Next I
+    Next i
 
     ' 키워드를 찾지 못한 경우
     FindRowWithKeyword = 0

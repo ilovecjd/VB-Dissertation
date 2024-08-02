@@ -15,9 +15,9 @@ Attribute VB_Exposed = False
 Option Explicit
 Option Base 1
 
-' 회사 속성
-Public comID As Integer ' 회사 ID
-Public comName As String ' 회사 이름
+
+Private comID As Integer ' 회사 ID
+Private comTotalProjectNum As Integer ' 전체 프로젝트 갯수
 
 ' 프로젝트 테이블
 Private comProjectTable() As clsProject
@@ -50,14 +50,15 @@ Public Property Get comDefferTableSize() As Integer
 End Property
 
 ' 초기화
-Public Sub Init()
-    Dim totalProjects As Integer
-    totalProjects = gTotalProjectNum
+Public Sub Init(Id As Integer, ProjectNum As Integer)
+
+    comID = Id
+    comTotalProjectNum = ProjectNum
     
-    ReDim comProjectTable(1 To totalProjects)
-    ReDim comDoingTable(1 To totalProjects)
-    ReDim comDoneTable(1 To totalProjects)
-    ReDim comDefferTable(1 To totalProjects)
+    ReDim comProjectTable(1 To comTotalProjectNum)
+    ReDim comDoingTable(1 To comTotalProjectNum)
+    ReDim comDoneTable(1 To comTotalProjectNum)
+    ReDim comDefferTable(1 To comTotalProjectNum)
 End Sub
 
 ' 의사결정
@@ -65,7 +66,7 @@ Public Sub Decision(period As Integer)
     Dim i As Integer
     Dim project As clsProject
     
-    For i = 1 To gTotalProjectNum
+    For i = 1 To comTotalProjectNum
         Set project = gProjectTable(i)
         If project.StartDate = 0 Then
             If CanStartProject(project, period) Then

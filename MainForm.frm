@@ -9,6 +9,14 @@ Begin VB.Form MainForm
    ScaleHeight     =   8400
    ScaleWidth      =   14295
    StartUpPosition =   3  'Windows 기본값
+   Begin VB.CommandButton Run 
+      Caption         =   "시뮬레이션시작"
+      Height          =   615
+      Left            =   4680
+      TabIndex        =   21
+      Top             =   6120
+      Width           =   1455
+   End
    Begin simulator.ProgressBar ProgressBar1 
       Height          =   375
       Left            =   360
@@ -34,31 +42,29 @@ Begin VB.Form MainForm
       Height          =   300
       Left            =   2600
       TabIndex        =   19
-      Text            =   "Text4"
       Top             =   5110
       Width           =   1000
    End
    Begin VB.OptionButton Option_Create 
       Caption         =   "Create"
       Height          =   495
-      Left            =   5040
+      Left            =   3240
       TabIndex        =   13
       Top             =   6120
-      Width           =   1215
+      Width           =   975
    End
    Begin VB.OptionButton Option_Load 
       Caption         =   "Load"
       Height          =   495
-      Left            =   3480
+      Left            =   2280
       TabIndex        =   12
       Top             =   6120
-      Width           =   1215
+      Width           =   855
    End
    Begin VB.TextBox txtCash 
       Height          =   300
       Left            =   2600
       TabIndex        =   11
-      Text            =   "Text3"
       Top             =   4428
       Width           =   1000
    End
@@ -66,7 +72,6 @@ Begin VB.Form MainForm
       Height          =   300
       Left            =   2600
       TabIndex        =   10
-      Text            =   "Text2"
       Top             =   3750
       Width           =   1000
    End
@@ -74,17 +79,16 @@ Begin VB.Form MainForm
       Height          =   300
       Left            =   2600
       TabIndex        =   9
-      Text            =   "Text1"
       Top             =   3072
       Width           =   1000
    End
    Begin VB.CommandButton btnGenBoardNProject 
       Caption         =   "프로젝트생성"
       Height          =   615
-      Left            =   360
+      Left            =   240
       TabIndex        =   8
       Top             =   6120
-      Width           =   2415
+      Width           =   1455
    End
    Begin VB.TextBox txtHr_M 
       Height          =   300
@@ -117,10 +121,10 @@ Begin VB.Form MainForm
    Begin VB.Frame Frame1 
       Caption         =   "생성옵션"
       Height          =   855
-      Left            =   3240
+      Left            =   2040
       TabIndex        =   14
       Top             =   5880
-      Width           =   3495
+      Width           =   2295
    End
    Begin VB.Label Label6 
       Alignment       =   2  '가운데 맞춤
@@ -228,7 +232,8 @@ Private Sub btnGenBoardNProject_Click()
     'GlobalEnv.Hr_LeadTime
     'GlobalEnv.Problem
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-            
+
+    '1. 기존 프로젝트들을 그대로 사용
     If gProjectLoadOrCreate = LoadOrCreate.Load Then
         Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
@@ -238,6 +243,8 @@ Private Sub btnGenBoardNProject_Click()
             'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("월"))
             Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
         End If
+        
+    '2. 신규 프로젝트 생성
     Else
         Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
@@ -245,21 +252,22 @@ Private Sub btnGenBoardNProject_Click()
             
         Else
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            Dim I As Integer
-            For I = 1 To GlobalEnv.SimulationWeeks
-                gPrintDurationTable(I) = I
-            Next I
+            Dim i As Integer
+            For i = 1 To GlobalEnv.SimulationWeeks
+                gPrintDurationTable(i) = i
+            Next i
         
-            Call CreateOrderTable ' Order 테이블을 생성
+            Call CreateOrderTable   ' Order 테이블을 생성
             Call CreateProjects     ' 프로젝트를 생성한다.
+            Call PrintDashboard     ' 대시보드를 시트에 출력한다
+            Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
+            Call PrintProjectAll    ' 프로젝트 전체를 출력한다
             
         End If
         
     End If
         
-    Call PrintDashboard ' 대시보드를 시트에 출력한다
-    Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
-    Call PrintProjectAll ' 프로젝트 전체를 출력한다
+    
 
 End Sub
 
@@ -275,47 +283,33 @@ End Sub
 '
 Private Sub Form_Load()
         
-    GCurrentPath = App.Path ' 프로그램의 경로 저장
+    GCurrentPath = App.Path ' 프로그램 및 data.xlsm 파일의 경로
     
-    ' data.xlsm 파일이 없으면 프로그램 종료, run_log.txt 파일이 없으면 생성 후 계속 진행
+    'run_log.txt 파일이 없으면 생성 후 계속 진행, data.xlsm 파일이 없으면 경고 후 프로그램 종료,
     Call CheckFiles
     
-    Call ModifyExcel ' 사용할 엑셀과 시트의 Object들을 설정한다.
+    ' data.xlsm 파일의 시트 객체들을 설정
+    Call ModifyExcel
     
+    ' data.xlsm 파일의 parameters와 Dashboard 시트의 내용들에 대한 유효성 체크
+    Call CheckDataFile
+    
+    ' data.xlsm 파일에서 시뮬레이션의 기본설정값들을 가져온다.
     Call LoadExcelEnv
-    
-    gProjectLoadOrCreate = LoadOrCreate.Load ' 기본 설정은 엑셀 파일에 기록된 값들을 로드해서 사용
-    Option_Load.value = True
         
-    ' 시뮬레이션의 기본 환경 변수들
-'    GlobalEnv.WeeklyProb = 1.25
-'    GlobalEnv.Cash_Init = 1000
-'    GlobalEnv.Hr_Init_H = 13
-'    GlobalEnv.Hr_Init_L = 6
-'    GlobalEnv.Hr_Init_M = 21
-'    GlobalEnv.Hr_LeadTime = 3
-'    GlobalEnv.Problem = 100
-'    GlobalEnv.SimulationWeeks = 156 ' 3년(52주 * 3년)
-    
-    'GlobalEnv.SimulationWeeks = GetLastColumnValue(FindRowWithKeyword("월"))
-    'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("누계"))
-'    Public gOrderTable() As Variant
-'    Public gProjectTable() As clsProject
-'    Public gPrintDurationTable() As Variant
-    
-    
+    ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
+    gProjectLoadOrCreate = LoadOrCreate.Load
+    Option_Load.value = True
+
     ' 화면에 보이는 초기 값 설정
-    txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '"156"
-    txtWeeklyProb.Text = GlobalEnv.WeeklyProb '"1.25"
-    txtCash = GlobalEnv.Cash_Init
-    txtHr_H = GlobalEnv.Hr_Init_H
-    txtHr_M = GlobalEnv.Hr_Init_M
-    txtHr_L = GlobalEnv.Hr_Init_L
-    txtLeadTime = GlobalEnv.Hr_LeadTime
-    txtProblemCount = GlobalEnv.Problem
-    
-    
-    
+    txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
+    txtWeeklyProb.Text = GlobalEnv.WeeklyProb           '1.25
+    txtCash = GlobalEnv.Cash_Init                       '1000
+    txtHr_H = GlobalEnv.Hr_Init_H                       '13
+    txtHr_M = GlobalEnv.Hr_Init_M                       '21
+    txtHr_L = GlobalEnv.Hr_Init_L                       '6
+    txtLeadTime = GlobalEnv.Hr_LeadTime                 '3
+    txtProblemCount = GlobalEnv.Problem                 '100
         
 End Sub
 
@@ -355,7 +349,7 @@ End Sub
 
 
 
-' data.xlsm 파일이 이미 열려 있는지 확인하고 편집 내용이 바로 반영되게 오픈한다.
+' data.xlsm 파일의 시트 객체들을 설정
 Public Sub ModifyExcel()
     
     Dim filePath As String
@@ -372,9 +366,6 @@ Public Sub ModifyExcel()
         Set xlApp = CreateObject("Excel.Application")
         xlApp.Visible = True
         xlApp.ScreenUpdating = True
-        'MsgBox "엑셀이 실행 중이 아닙니다. 엑셀을 실행한 후 다시 시도하십시오."
-        'End
-        'Exit Sub
     End If
     
     ' 워크북 열기 또는 이미 열려 있는 워크북 참조
@@ -388,25 +379,13 @@ Public Sub ModifyExcel()
         
     End If
     
-    On Error GoTo 0
+    On Error GoTo 0 '오류 객체에 저장된 값을 초기값으로 변경
     
     Set gWsParameters = xlWb.Sheets(PARAMETERS_SHEET_NAME)
     Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
     Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
     Set gWsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
     
-    ' 시트를 Clear 하고 저장함.
-    ' Call ClearSheet(gWsProject)
-    'xlWb.Save
-    
-    
-    ' 변경 내용을 실시간으로 볼 수 있게 하기 위해 화면 업데이트
-    'xlApp.Visible = True
-    'xlApp.ScreenUpdating = True
-
-    ' 변경 사항 저장 (선택 사항)
-    ' xlWb.Save
-
 End Sub
 
 
@@ -512,8 +491,6 @@ Private Sub CleanUpExcel()
         
 End Sub
 
-
-
 Private Sub Option_Create_Click()
     gProjectLoadOrCreate = LoadOrCreate.Create
 
@@ -522,3 +499,138 @@ End Sub
 Private Sub Option_Load_Click()
     gProjectLoadOrCreate = LoadOrCreate.Load
 End Sub
+
+' 시뮬레이션을 시작한다.
+Private Sub Run_Click()
+
+    Dim i As Integer
+    'song 시뮬레이션이 준비되었는지 체크해야함.
+    
+    Dim Company As clsCompany
+    
+    Set Company = New clsCompany
+    Call Company.Init(1, 200)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
+
+    Debug.Print VBA.String(200, vbNewLine)
+    
+    For i = 1 To GlobalEnv.SimulationWeeks 'song ==> 일단 10주만 돌려보자.
+        Call Company.Decision(i)    ' i번째 기간에 결정해야 할 일들
+        Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
+        Call PrintSimulationResults(Company)
+        'Call dasPrintDecision(Arr)
+    Next
+    
+End Sub
+
+Function ClearTableArea(ws As Worksheet, startRow As Long)
+    
+    With ws
+        Dim endRow As Long ' 마지막행
+        Dim endCol As Long ' 마지막열
+        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
+        endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
+
+        ' 엑셀 파일의 셀들을 정리한다.
+        .Range(.Cells(startRow, 1), .Cells(endRow, endCol)).UnMerge
+        .Range(.Cells(startRow, 1), .Cells(endRow, endCol)).Clear
+        .Range(.Cells(startRow, 1), .Cells(endRow, endCol)).ClearContents
+    End With
+
+End Function
+
+
+Private Function PrintSimulationResults(Company As clsCompany)
+    
+    'Call ClearSheet(gWsDashboard)          '시트의 모든 내용을 지우고 셀 병합 해제
+
+    Dim startRow    As Long
+    Dim arrHeader   As Variant
+    arrHeader = Array("월", "누계", "prjNum")
+
+    startRow = DONG_TABLE_INDEX
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDoingTable)      ' 내용을 적는다.
+
+    startRow = startRow + Company.comDoingTableSize + 2
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDoneTable)       ' 내용을 적는다.
+
+    startRow = startRow + Company.comDoneTableSize + 2
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDefferTable)     ' 내용을 적는다.
+
+
+    Exit Function
+
+    
+End Function
+
+' data.xlsm 파일의 parameters, dashboard 시트의 유효성 체크
+Private Function CheckDataFile() As Boolean
+        
+    Dim arrHeader As Variant
+    Dim posY As Long, posX As Long, i As Integer
+    Dim strErr As String
+    
+    CheckDataFile = True
+    strErr = "다음을 확인하세요."
+        
+    With gWsParameters
+    
+        strErr = strErr & vbNewLine & PARAMETERS_SHEET_NAME & ": "
+        
+        arrHeader = Array("SimulTerm", "avgProjects", "Hr_Init_H", "Hr_Init_M", "Hr_Init_L", "Hr_LeadTime", "Cash_Init", "ProblemCnt")
+        arrHeader = PivotArray(arrHeader)
+                
+        posX = 1: posY = 2
+        
+        For i = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(i, 1) = .Cells(posY, posX) Then
+            
+            Else
+                strErr = strErr & arrHeader(i, 1) & ", "
+                CheckDataFile = False
+            End If
+            
+            posY = posY + 1
+            
+        Next i
+        
+    End With
+        
+        
+    With gWsDashboard
+    
+        strErr = strErr & vbNewLine & DBOARD_SHEET_NAME & ": "
+        
+        arrHeader = Array("월", "누계", "발주")
+        arrHeader = PivotArray(arrHeader)
+                
+        posX = 1: posY = 2
+        
+        For i = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(i, 1) = .Cells(posY, posX) Then
+            
+            Else
+                strErr = strErr & arrHeader(i, 1) & ", "
+                CheckDataFile = False
+            End If
+            
+            posY = posY + 1
+            
+        Next i
+        
+    End With
+    
+    ' song PROJECT_SHEET_NAME 은 체크가 필요 없다고 생각됨
+    ' song ACTIVITY_SHEET_NAME 의 체크는 추후 진행
+        
+    If CheckDataFile = False Then
+        Call MsgBox(strErr, vbCritical, "중요")
+    End If
+    
+End Function
+
