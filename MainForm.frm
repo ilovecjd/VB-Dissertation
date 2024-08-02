@@ -1,129 +1,198 @@
 VERSION 5.00
 Begin VB.Form MainForm 
    Caption         =   "Simulator"
-   ClientHeight    =   7785
+   ClientHeight    =   8400
    ClientLeft      =   120
    ClientTop       =   465
    ClientWidth     =   14295
    LinkTopic       =   "MainForm"
-   ScaleHeight     =   7785
+   ScaleHeight     =   8400
    ScaleWidth      =   14295
    StartUpPosition =   3  'Windows 기본값
+   Begin simulator.ProgressBar ProgressBar1 
+      Height          =   375
+      Left            =   360
+      TabIndex        =   20
+      Top             =   7080
+      Width           =   6615
+      _ExtentX        =   11668
+      _ExtentY        =   661
+      Value           =   0
+      TextStyle       =   3
+      BeginProperty TextFont {0BE35203-8F91-11CE-9DE3-00AA004BB851} 
+         Name            =   "굴림"
+         Size            =   9
+         Charset         =   129
+         Weight          =   400
+         Underline       =   0   'False
+         Italic          =   0   'False
+         Strikethrough   =   0   'False
+      EndProperty
+      Text            =   "진행상황"
+   End
+   Begin VB.TextBox txtProblemCount 
+      Height          =   300
+      Left            =   2600
+      TabIndex        =   19
+      Text            =   "Text4"
+      Top             =   5110
+      Width           =   1000
+   End
    Begin VB.OptionButton Option_Create 
       Caption         =   "Create"
       Height          =   495
       Left            =   5040
       TabIndex        =   13
-      Top             =   7080
+      Top             =   6120
       Width           =   1215
    End
    Begin VB.OptionButton Option_Load 
       Caption         =   "Load"
-      Height          =   375
+      Height          =   495
       Left            =   3480
       TabIndex        =   12
-      Top             =   7200
-      Width           =   1095
+      Top             =   6120
+      Width           =   1215
    End
-   Begin VB.TextBox Text3 
-      Height          =   495
-      Left            =   3360
+   Begin VB.TextBox txtCash 
+      Height          =   300
+      Left            =   2600
       TabIndex        =   11
       Text            =   "Text3"
-      Top             =   4680
-      Width           =   1695
+      Top             =   4428
+      Width           =   1000
    End
-   Begin VB.TextBox Text2 
-      Height          =   615
-      Left            =   3240
+   Begin VB.TextBox txtLeadTime 
+      Height          =   300
+      Left            =   2600
       TabIndex        =   10
       Text            =   "Text2"
-      Top             =   3720
-      Width           =   1935
+      Top             =   3750
+      Width           =   1000
    End
-   Begin VB.TextBox Text1 
-      Height          =   495
-      Left            =   3360
+   Begin VB.TextBox txtHr_L 
+      Height          =   300
+      Left            =   2600
       TabIndex        =   9
       Text            =   "Text1"
-      Top             =   2760
-      Width           =   1695
+      Top             =   3072
+      Width           =   1000
    End
    Begin VB.CommandButton btnGenBoardNProject 
       Caption         =   "프로젝트생성"
       Height          =   615
-      Left            =   480
+      Left            =   360
       TabIndex        =   8
-      Top             =   7080
+      Top             =   6120
       Width           =   2415
    End
-   Begin VB.TextBox Hr_Init_M 
-      Height          =   495
-      Left            =   3240
+   Begin VB.TextBox txtHr_M 
+      Height          =   300
+      Left            =   2600
       TabIndex        =   3
-      Top             =   1920
-      Width           =   1935
+      Top             =   2394
+      Width           =   1000
    End
-   Begin VB.TextBox Hr_Init_H 
-      Height          =   495
-      Left            =   3240
+   Begin VB.TextBox txtHr_H 
+      Height          =   300
+      Left            =   2600
       TabIndex        =   2
-      Top             =   1320
-      Width           =   1935
+      Top             =   1716
+      Width           =   1000
    End
    Begin VB.TextBox txtWeeklyProb 
-      Height          =   495
-      Left            =   3240
+      Height          =   300
+      Left            =   2600
       TabIndex        =   1
-      Top             =   720
-      Width           =   1815
+      Top             =   1038
+      Width           =   1000
    End
    Begin VB.TextBox txtSimulationWeeks 
-      Height          =   375
-      Left            =   3240
+      Height          =   300
+      Left            =   2600
       TabIndex        =   0
-      Top             =   240
-      Width           =   1935
+      Top             =   360
+      Width           =   1000
    End
    Begin VB.Frame Frame1 
-      Caption         =   "실행옵션"
+      Caption         =   "생성옵션"
       Height          =   855
-      Left            =   3120
+      Left            =   3240
       TabIndex        =   14
-      Top             =   6840
+      Top             =   5880
       Width           =   3495
    End
+   Begin VB.Label Label6 
+      Alignment       =   2  '가운데 맞춤
+      Caption         =   "문제갯수"
+      Height          =   250
+      Left            =   400
+      TabIndex        =   18
+      Top             =   5160
+      Width           =   1500
+   End
+   Begin VB.Label Label5 
+      Alignment       =   2  '가운데 맞춤
+      Caption         =   "자금"
+      Height          =   250
+      Left            =   400
+      TabIndex        =   17
+      Top             =   4470
+      Width           =   1200
+   End
+   Begin VB.Label Label4 
+      Alignment       =   2  '가운데 맞춤
+      Caption         =   "LeadTime"
+      Height          =   250
+      Left            =   400
+      TabIndex        =   16
+      Top             =   3785
+      Width           =   1500
+   End
+   Begin VB.Label Label3 
+      Alignment       =   2  '가운데 맞춤
+      Caption         =   "보유인력(초급)"
+      Height          =   250
+      Left            =   400
+      TabIndex        =   15
+      Top             =   3100
+      Width           =   1200
+   End
    Begin VB.Label Label1 
+      Alignment       =   2  '가운데 맞춤
       Caption         =   "보유인력(중급)"
-      Height          =   495
-      Left            =   240
+      Height          =   250
+      Left            =   400
       TabIndex        =   7
-      Top             =   2160
-      Width           =   1935
+      Top             =   2415
+      Width           =   1500
    End
    Begin VB.Label Label2 
+      Alignment       =   2  '가운데 맞춤
       Caption         =   "보유인력(고급)"
-      Height          =   495
-      Left            =   360
+      Height          =   250
+      Left            =   400
       TabIndex        =   6
-      Top             =   1515
-      Width           =   1935
+      Top             =   1730
+      Width           =   1500
    End
    Begin VB.Label 프로젝트발생빈 
+      Alignment       =   2  '가운데 맞춤
       Caption         =   "프로젝트발생빈도"
-      Height          =   495
-      Left            =   480
+      Height          =   250
+      Left            =   400
       TabIndex        =   5
-      Top             =   840
-      Width           =   1935
+      Top             =   1045
+      Width           =   1500
    End
    Begin VB.Label SimulTearm 
+      Alignment       =   2  '가운데 맞춤
       Caption         =   "시간(주)"
-      Height          =   375
-      Left            =   600
+      Height          =   250
+      Left            =   400
       TabIndex        =   4
-      Top             =   240
-      Width           =   1575
+      Top             =   360
+      Width           =   1500
    End
 End
 Attribute VB_Name = "MainForm"
@@ -150,12 +219,24 @@ Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
     
+    ' 입력값들을 업데이트 한다.
+    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
+    'GlobalEnv.Cash_Init
+    'GlobalEnv.Hr_Init_H
+    'GlobalEnv.Hr_Init_L
+    'GlobalEnv.Hr_Init_M
+    'GlobalEnv.Hr_LeadTime
+    'GlobalEnv.Problem
+    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+            
     If gProjectLoadOrCreate = LoadOrCreate.Load Then
         Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
         Else
-            
+            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
+            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("월"))
+            Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
         End If
     Else
         Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
@@ -163,22 +244,11 @@ Private Sub btnGenBoardNProject_Click()
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
             
         Else
-            ' 입력값들을 업데이트 한다.
-            GlobalEnv.WeeklyProb = txtWeeklyProb.Text
-            'GlobalEnv.Cash_Init
-            'GlobalEnv.Hr_Init_H
-            'GlobalEnv.Hr_Init_L
-            'GlobalEnv.Hr_Init_M
-            'GlobalEnv.Hr_LeadTime
-            'GlobalEnv.Problem
-            GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-            
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            Dim i As Integer
-            
-        For i = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(i) = i
-        Next i
+            Dim I As Integer
+            For I = 1 To GlobalEnv.SimulationWeeks
+                gPrintDurationTable(I) = I
+            Next I
         
             Call CreateOrderTable ' Order 테이블을 생성
             Call CreateProjects     ' 프로젝트를 생성한다.
@@ -190,8 +260,6 @@ Private Sub btnGenBoardNProject_Click()
     Call PrintDashboard ' 대시보드를 시트에 출력한다
     Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
     Call PrintProjectAll ' 프로젝트 전체를 출력한다
-    
-    'Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
 
 End Sub
 
@@ -212,31 +280,43 @@ Private Sub Form_Load()
     ' data.xlsm 파일이 없으면 프로그램 종료, run_log.txt 파일이 없으면 생성 후 계속 진행
     Call CheckFiles
     
+    Call ModifyExcel ' 사용할 엑셀과 시트의 Object들을 설정한다.
+    
+    Call LoadExcelEnv
+    
     gProjectLoadOrCreate = LoadOrCreate.Load ' 기본 설정은 엑셀 파일에 기록된 값들을 로드해서 사용
-    Option_Load.Value = True
-        
+    Option_Load.value = True
         
     ' 시뮬레이션의 기본 환경 변수들
-    GlobalEnv.WeeklyProb = 1.25
-    GlobalEnv.Cash_Init = 1000
-    GlobalEnv.Hr_Init_H = 13
-    GlobalEnv.Hr_Init_L = 6
-    GlobalEnv.Hr_Init_M = 21
-    GlobalEnv.Hr_LeadTime = 3
-    GlobalEnv.Problem = 100
-    GlobalEnv.SimulationWeeks = 156 ' 3년(52주 * 3년)
+'    GlobalEnv.WeeklyProb = 1.25
+'    GlobalEnv.Cash_Init = 1000
+'    GlobalEnv.Hr_Init_H = 13
+'    GlobalEnv.Hr_Init_L = 6
+'    GlobalEnv.Hr_Init_M = 21
+'    GlobalEnv.Hr_LeadTime = 3
+'    GlobalEnv.Problem = 100
+'    GlobalEnv.SimulationWeeks = 156 ' 3년(52주 * 3년)
+    
+    'GlobalEnv.SimulationWeeks = GetLastColumnValue(FindRowWithKeyword("월"))
+    'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("누계"))
+'    Public gOrderTable() As Variant
+'    Public gProjectTable() As clsProject
+'    Public gPrintDurationTable() As Variant
     
     
     ' 화면에 보이는 초기 값 설정
     txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '"156"
     txtWeeklyProb.Text = GlobalEnv.WeeklyProb '"1.25"
+    txtCash = GlobalEnv.Cash_Init
+    txtHr_H = GlobalEnv.Hr_Init_H
+    txtHr_M = GlobalEnv.Hr_Init_M
+    txtHr_L = GlobalEnv.Hr_Init_L
+    txtLeadTime = GlobalEnv.Hr_LeadTime
+    txtProblemCount = GlobalEnv.Problem
     
-    Call ModifyExcel ' 사용할 엑셀과 시트의 Object들을 설정한다.
     
-    ' 사용하지 않는다. Call Prologue
-
-    'Call LoadExcelEnv ' 사용할 엑셀의 시트 정보 설정
     
+        
 End Sub
 
 
@@ -267,7 +347,7 @@ Public Sub CheckFiles()
     
     ' 데이터 파일(엑셀파일)이 존재하는지 확인
     If Dir(filePath) = "" Then
-        MsgBox "Data.xlsm 파일을 복사후 다시 시작해 주세요", vbCritical
+        MsgBox "Data.xlsm 파일을 복사후 프로그램을 다시 시작해 주세요", vbCritical
         End
     End If
         
@@ -310,6 +390,7 @@ Public Sub ModifyExcel()
     
     On Error GoTo 0
     
+    Set gWsParameters = xlWb.Sheets(PARAMETERS_SHEET_NAME)
     Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
     Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
     Set gWsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
@@ -329,25 +410,23 @@ Public Sub ModifyExcel()
 End Sub
 
 
-' 엑셀 시트들을 초기화(clear) 하고 저장한다.
+' 엑셀 시트에서 초기화에 필요한 값들을 가져온다.
 Sub LoadExcelEnv()
     
-    Call CheckPreviousRun
+    Dim posY As Long, posX As Long
     
-    ' 엑셀 애플리케이션 객체 초기화
-    Set xlApp = CreateObject("Excel.Application")
+    With gWsParameters
+    ' 시뮬레이션의 기본 환경 변수들
+    posX = 2: posY = 2: GlobalEnv.SimulationWeeks = .Cells(posY, posX) '156 ' 3년(52주 * 3년)
+    posY = posY + 1: GlobalEnv.WeeklyProb = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Hr_Init_H = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Hr_Init_L = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Hr_Init_M = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Hr_LeadTime = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Cash_Init = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.Problem = .Cells(posY, posX)
+    End With
     
-    ' 엑셀 워크북 열기
-    Set xlWb = xlApp.Workbooks.Open(GCurrentPath & "\" & STR_DATA_FILE)
-        
-    Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
-    Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
-    Set gWsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
-    
-    ' 시트를 Clear 하고 저장함.
-    Call ClearSheet(gWsProject)
-    xlWb.Save
-
 End Sub
 
 
@@ -432,6 +511,8 @@ Private Sub CleanUpExcel()
     End If
         
 End Sub
+
+
 
 Private Sub Option_Create_Click()
     gProjectLoadOrCreate = LoadOrCreate.Create

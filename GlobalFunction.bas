@@ -6,10 +6,12 @@ Option Base 1
 Public xlApp                As Object   ' 엑셀 애플리케이션 객체
 Public xlWb                 As Object   ' 엑셀 워크북 객체
 
+Public gWsParameters        As Object   ' Parameters 시트 객체
 Public gWsDashboard         As Object   ' Dashboard 시트 객체
 Public gWsProject           As Object   ' Project 시트 객체
 Public gWsActivity_Struct   As Object   ' Activity_Struct 시트 객체
 
+Public Const PARAMETERS_SHEET_NAME = "parameters"
 Public Const DBOARD_SHEET_NAME = "dashboard"
 Public Const PROJECT_SHEET_NAME = "project"
 Public Const ACTIVITY_SHEET_NAME = "activity_struct"
@@ -76,16 +78,16 @@ Public Property Get GetExcelInitialized() As Boolean
     GetExcelInitialized = gExcelInitialized
 End Property
 
-Public Property Let LetExcelInitialized(Value As Boolean)
-    gExcelInitialized = Value
+Public Property Let LetExcelInitialized(value As Boolean)
+    gExcelInitialized = value
 End Property
 
 Public Property Get GetTableInitialized() As Boolean
     GetTableInitialized = gTableInitialized
 End Property
 
-Public Property Let LetTableInitialized(Value As Boolean)
-    gTableInitialized = Value
+Public Property Let LetTableInitialized(value As Boolean)
+    gTableInitialized = value
 End Property
 
 Public Property Get GetTotalProjectNum() As Integer
@@ -103,14 +105,14 @@ End Property
 ' 전역적으로 사용하는 테이블들을 채운다.
 Sub Prologue(TableInit As Integer)
 
-    Dim i As Integer
+    Dim I As Integer
     
     If gExcelInitialized = False Then
 
         ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-        For i = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(i) = i
-        Next i
+        For I = 1 To GlobalEnv.SimulationWeeks
+            gPrintDurationTable(I) = I
+        Next I
 
         gExcelInitialized = True
     End If
@@ -147,7 +149,7 @@ Private Function LoadOrderTable() As Boolean
     startIndex = ORDER_TABLE_INDEX + 2
 
     With gWsDashboard
-        gOrderTable = .Range(.Cells(startIndex, 2), .Cells(startIndex + 1, GlobalEnv.SimulationWeeks + 1)).Value
+        gOrderTable = .Range(.Cells(startIndex, 2), .Cells(startIndex + 1, GlobalEnv.SimulationWeeks + 1)).value
     End With
 
     gTotalProjectNum = gOrderTable(1, GlobalEnv.SimulationWeeks) + gOrderTable(2, GlobalEnv.SimulationWeeks)
@@ -168,7 +170,7 @@ Private Function LoadProjects() As Boolean
         endRow = startRow + PRJ_SHEET_HEADER_H - 1
 
         With gWsProject
-            prjInfo = .Range(.Cells(startRow, 1), .Cells(endRow, PRJ_SHEET_HEADER_W)).Value
+            prjInfo = .Range(.Cells(startRow, 1), .Cells(endRow, PRJ_SHEET_HEADER_W)).value
         End With
 
         tempPrj.ProjectType = prjInfo(1, 1)
@@ -182,10 +184,10 @@ Private Function LoadProjects() As Boolean
         tempPrj.SuccessProbability = prjInfo(1, 9)
         
         Dim tempCF(1 To MAX_N_CF) As Integer
-        Dim i As Integer
-        For i = 1 To MAX_N_CF
-            tempCF(i) = prjInfo(1, 10 + i)
-        Next i
+        Dim I As Integer
+        For I = 1 To MAX_N_CF
+            tempCF(I) = prjInfo(1, 10 + I)
+        Next I
         tempPrj.SetPrjCashFlows tempCF
 
         tempPrj.FirstPayment = prjInfo(1, 14)
@@ -198,15 +200,15 @@ Private Function LoadProjects() As Boolean
         tempPrj.FinalPaymentMonth = prjInfo(2, 13)
         
         Dim tempAct As Activity
-        For i = 1 To tempPrj.NumActivities
-            tempAct.Duration = prjInfo(2 + i, 2)
-            tempAct.StartDate = prjInfo(2 + i, 3)
-            tempAct.EndDate = prjInfo(2 + i, 4)
-            tempAct.HighSkill = prjInfo(2 + i, 5)
-            tempAct.MidSkill = prjInfo(2 + i, 6)
-            tempAct.LowSkill = prjInfo(2 + i, 7)
+        For I = 1 To tempPrj.NumActivities
+            tempAct.Duration = prjInfo(2 + I, 2)
+            tempAct.StartDate = prjInfo(2 + I, 3)
+            tempAct.EndDate = prjInfo(2 + I, 4)
+            tempAct.HighSkill = prjInfo(2 + I, 5)
+            tempAct.MidSkill = prjInfo(2 + I, 6)
+            tempAct.LowSkill = prjInfo(2 + I, 7)
             'tempPrj.SetPrjActivities i, tempAct
-        Next i
+        Next I
 
         Set gProjectTable(prjID) = tempPrj
     Next prjID
@@ -254,6 +256,10 @@ Public Function CreateProjects()
     ' 프로젝트 갯수를 관리하는 테이블에 발생한 프로젝트의 갯수를 기록한다.
     ReDim gProjectTable(gTotalProjectNum)
 
+    MainForm.ProgressBar1.Max = GlobalEnv.SimulationWeeks
+    MainForm.ProgressBar1.Min = 0
+    MainForm.ProgressBar1.Text = "프로젝트 생성중"
+    
     For week = 1 To GlobalEnv.SimulationWeeks
         preTotal = gOrderTable(1, week)
         startPrjNum = preTotal + 1
@@ -270,6 +276,7 @@ Public Function CreateProjects()
         Next id
 
 Continue:
+        MainForm.ProgressBar1.value = week
     Next week
 End Function
 
@@ -301,8 +308,8 @@ Public Function GetVariableValue(rng As Object, variableName As String) As Varia
     Dim dataArray As Variant
     Dim matchIndex As Variant
 
-    dataArray = rng.Value
-    matchIndex = Application.Match(variableName, Application.index(dataArray, 0, 1), 0)
+    dataArray = rng.value
+    matchIndex = Application.Match(variableName, Application.Index(dataArray, 0, 1), 0)
     
     If Not IsError(matchIndex) Then
         GetVariableValue = dataArray(matchIndex, 2)
@@ -318,7 +325,7 @@ Sub PrintArrayWithLine(ws As Object, startRow As Long, startCol As Long, dataArr
         
     Call GetArraySize(dataArray, numRows, numCols)
     With ws
-        .Range(.Cells(startRow, startCol), .Cells(startRow + numRows - 1, startCol + numCols - 1)).Value = dataArray
+        .Range(.Cells(startRow, startCol), .Cells(startRow + numRows - 1, startCol + numCols - 1)).value = dataArray
         .Range(.Cells(startRow, startCol), .Cells(startRow + numRows - 1, startCol + numCols - 1)).Borders.LineStyle = xlContinuous
         .Range(.Cells(startRow, startCol), .Cells(startRow + numRows - 1, startCol + numCols - 1)).Borders.Weight = xlThin
         .Range(.Cells(startRow, startCol), .Cells(startRow + numRows - 1, startCol + numCols - 1)).Borders.ColorIndex = xlAutomatic
@@ -384,26 +391,26 @@ End Function
 
 Function PrintProjectAll()
     Dim temp As clsProject
-    Dim i As Integer
+    Dim I As Integer
 
-    For i = 1 To gTotalProjectNum
-        Set temp = gProjectTable(i)
+    For I = 1 To gTotalProjectNum
+        Set temp = gProjectTable(I)
         Call temp.PrintInfo
-    Next i
+    Next I
 End Function
 
 Function ConvertToBase1(arr As Variant) As Variant
-    Dim i As Integer
+    Dim I As Integer
     Dim newArr() As Variant
     ReDim newArr(1 To UBound(arr) - LBound(arr) + 1)
-    For i = LBound(arr) To UBound(arr)
-        newArr(i - LBound(arr) + 1) = arr(i)
-    Next i
+    For I = LBound(arr) To UBound(arr)
+        newArr(I - LBound(arr) + 1) = arr(I)
+    Next I
     ConvertToBase1 = newArr
 End Function
 
 Function PivotArray(arr As Variant) As Variant
-    Dim i As Integer
+    Dim I As Integer
     Dim rowCount As Integer
     Dim result() As Variant
     
@@ -414,9 +421,9 @@ Function PivotArray(arr As Variant) As Variant
     ReDim result(1 To rowCount, 1 To 1)
     
     ' 1차원 배열을 2차원 배열로 변환
-    For i = LBound(arr) To UBound(arr)
-        result(i, 1) = arr(i)
-    Next i
+    For I = LBound(arr) To UBound(arr)
+        result(I, 1) = arr(I)
+    Next I
     
     PivotArray = result
 End Function
@@ -432,13 +439,26 @@ Function PrintDashboard()
     Call PrintArrayWithLine(gWsDashboard, 2, 1, arrHeader)
     Call PrintArrayWithLine(gWsDashboard, 2, 2, gPrintDurationTable)
     Call PrintArrayWithLine(gWsDashboard, 3, 2, gOrderTable)
+    
+    arrHeader = Array("투입", "HR_H", "HR_M", "HR_L")
+    arrHeader = PivotArray(arrHeader)
+    Call PrintArrayWithLine(gWsDashboard, 6, 1, arrHeader)
+    
+    arrHeader = Array("여유", "HR_H", "HR_M", "HR_L")
+    arrHeader = PivotArray(arrHeader)
+    Call PrintArrayWithLine(gWsDashboard, 11, 1, arrHeader)
+    
+    arrHeader = Array("총원", "HR_H", "HR_M", "HR_L")
+    arrHeader = PivotArray(arrHeader)
+    Call PrintArrayWithLine(gWsDashboard, 16, 1, arrHeader)
+    
 End Function
 
 Function ClearSheet(ws As Object)
     With ws
         Dim endRow As Long
         Dim endCol As Long
-        endRow = .UsedRange.rows.Count + .UsedRange.Row - 1
+        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
         endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).UnMerge
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).Clear
@@ -460,3 +480,32 @@ Public Function PoissonRandom(lambda As Double) As Integer
     PoissonRandom = k - 1
 End Function
 
+
+Function FindRowWithKeyword(ws As Object, keyword As String) As Long
+    Dim lastRow As Long
+    Dim I As Long
+    
+    ' 엑셀 워크시트의 마지막 행 구하기
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
+
+    ' 1번 열을 순회하며 키워드 찾기
+    For I = 1 To lastRow
+        If InStr(1, ws.Cells(I, 1).value, keyword, vbTextCompare) > 0 Then
+            FindRowWithKeyword = I
+            Exit Function
+        End If
+    Next I
+
+    ' 키워드를 찾지 못한 경우
+    FindRowWithKeyword = 0
+End Function
+
+Function GetLastColumnValue(ws As Object, rowNumber As Long) As Variant
+    Dim lastCol As Long
+    
+    ' 특정 행의 마지막 열 번호 구하기
+    lastCol = ws.Cells(rowNumber, ws.Columns.Count).End(-4159).Column ' xlToLeft = -4159
+
+    ' 마지막 열의 값 반환
+    GetLastColumnValue = ws.Cells(rowNumber, lastCol).value
+End Function

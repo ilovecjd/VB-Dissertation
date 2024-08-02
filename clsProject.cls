@@ -60,8 +60,8 @@ End Property
  '   Activities(i) = Value
 'End Sub
 
-Public Sub SetPrjCashFlows(Value() As Integer)
-    CashFlows = Value
+Public Sub SetPrjCashFlows(value() As Integer)
+    CashFlows = value
 End Sub
 
 Private Sub Class_Initialize()
@@ -102,8 +102,8 @@ Public Sub SetProjectEnv()
     ReDim PatAttribute(1 To 6, 1 To 27)
 
     With gWsActivity_Struct
-        PrjAttribute = .Range(.Cells(3, 1), .Cells(7, 14)).Value
-        PatAttribute = .Range(.Cells(15, 1), .Cells(20, 27)).Value
+        PrjAttribute = .Range(.Cells(3, 1), .Cells(7, 14)).value
+        PatAttribute = .Range(.Cells(15, 1), .Cells(20, 27)).value
     End With
 End Sub
 
@@ -115,7 +115,7 @@ Public Sub CreateActivities()
 
     Dim prjType As Integer
     Dim patternType As Integer
-    Dim i As Integer
+    Dim I As Integer
     Dim probability As Integer
     Dim Lb As Integer
     Dim UB As Integer
@@ -130,16 +130,16 @@ Public Sub CreateActivities()
     probability = Int(Rnd() * 100)
     maxLoop = MAX_PRJ_TYPE
 
-    For i = 1 To maxLoop
-        UB = UB + PrjAttribute(i, 1)
+    For I = 1 To maxLoop
+        UB = UB + PrjAttribute(I, 1)
 
         If Lb <= probability And probability < UB Then
-            prjType = i
+            prjType = I
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next I
 
     Lb = PrjAttribute(prjType, 4)
     UB = PrjAttribute(prjType, 5)
@@ -150,25 +150,25 @@ Public Sub CreateActivities()
     UB = 0
     maxLoop = PrjAttribute(prjType, 6)
 
-    For i = 1 To maxLoop
-        UB = UB + PrjAttribute(prjType, 8 + ((i - 1) * 2))
+    For I = 1 To maxLoop
+        UB = UB + PrjAttribute(prjType, 8 + ((I - 1) * 2))
 
         If Lb <= probability And probability < UB Then
-            patternType = PrjAttribute(prjType, 7 + (i - 1) * 2)
+            patternType = PrjAttribute(prjType, 7 + (I - 1) * 2)
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next I
 
     Lb = 0
     UB = 0
     maxLoop = PatAttribute(patternType, 2)
     NumActivities = maxLoop
 
-    For i = 1 To maxLoop
-        Lb = Lb + PatAttribute(patternType, 3 + (i - 1) * 5)
-        UB = UB + PatAttribute(patternType, 4 + (i - 1) * 5)
+    For I = 1 To maxLoop
+        Lb = Lb + PatAttribute(patternType, 3 + (I - 1) * 5)
+        UB = UB + PatAttribute(patternType, 4 + (I - 1) * 5)
         probability = RandomBetween(Lb, UB)
         tempDuration = totalDuration * probability / 100
 
@@ -176,24 +176,24 @@ Public Sub CreateActivities()
             tempDuration = 1
         End If
 
-        If i = 1 Then
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = 1
-            Activities(i).EndDate = tempDuration
-        ElseIf i = 2 Then
-            Activities(i).Duration = totalDuration - Activities(1).Duration
-            Activities(i).StartDate = Activities(1).EndDate + 1
-            Activities(i).EndDate = totalDuration
-        ElseIf i = 3 Then
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = totalDuration - tempDuration
-            Activities(i).EndDate = totalDuration
+        If I = 1 Then
+            Activities(I).Duration = tempDuration
+            Activities(I).StartDate = 1
+            Activities(I).EndDate = tempDuration
+        ElseIf I = 2 Then
+            Activities(I).Duration = totalDuration - Activities(1).Duration
+            Activities(I).StartDate = Activities(1).EndDate + 1
+            Activities(I).EndDate = totalDuration
+        ElseIf I = 3 Then
+            Activities(I).Duration = tempDuration
+            Activities(I).StartDate = totalDuration - tempDuration
+            Activities(I).EndDate = totalDuration
         Else
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = Activities(3).StartDate - tempDuration - 1
-            Activities(i).EndDate = Activities(3).StartDate - 1
+            Activities(I).Duration = tempDuration
+            Activities(I).StartDate = Activities(3).StartDate - tempDuration - 1
+            Activities(I).EndDate = Activities(3).StartDate - 1
         End If
-    Next i
+    Next I
 End Sub
 
 Public Function RandomBetween(minValue As Integer, maxValue As Integer) As Integer
@@ -210,27 +210,27 @@ End Function
 
 ' 활동별 투입 인력 생성, 프로젝트 전체 기대 수익 생성 및 기록
 Public Sub CalculateHRandProfit()
-    Dim i As Integer
+    Dim I As Integer
     Dim j As Integer
     Dim high As Integer, mid As Integer, low As Integer
     high = 0: mid = 0: low = 0
 
-    For i = 1 To NumActivities
+    For I = 1 To NumActivities
         j = Int(Rnd() * 100)
         If (0 < j) And (j <= RND_HR_H) Then
-            Activities(i).HighSkill = 1
+            Activities(I).HighSkill = 1
         ElseIf (RND_HR_H < j) And (j <= RND_HR_M) Then
-            Activities(i).MidSkill = 1
+            Activities(I).MidSkill = 1
         Else
-            Activities(i).LowSkill = 1
+            Activities(I).LowSkill = 1
         End If
-    Next i
+    Next I
 
-    For i = 1 To NumActivities
-        high = high + Activities(i).HighSkill * Activities(i).Duration
-        mid = mid + Activities(i).MidSkill * Activities(i).Duration
-        low = low + Activities(i).LowSkill * Activities(i).Duration
-    Next i
+    For I = 1 To NumActivities
+        high = high + Activities(I).HighSkill * Activities(I).Duration
+        mid = mid + Activities(I).MidSkill * Activities(I).Duration
+        low = low + Activities(I).LowSkill * Activities(I).Duration
+    Next I
 
     Profit = CalculateTotalLaborCost(high, mid, low)
 End Sub
@@ -370,7 +370,7 @@ End Function
 
 ' 프로젝트의 모든 정보를 엑셀에 출력한다.
 Public Sub PrintInfo()
-    Dim i As Integer
+    Dim I As Integer
     Dim posX As Integer
     Dim posY As Integer
 
@@ -385,9 +385,9 @@ Public Sub PrintInfo()
     posX = posX + 1: ProjectInfo(posY, posX) = SuccessProbability
     posX = posX + 1: ProjectInfo(posY, posX) = NumCashFlows
 
-    For i = 1 To MAX_N_CF
-        posX = posX + 1: ProjectInfo(posY, posX) = CashFlows(i)
-    Next i
+    For I = 1 To MAX_N_CF
+        posX = posX + 1: ProjectInfo(posY, posX) = CashFlows(I)
+    Next I
 
     posX = posX + 1: ProjectInfo(posY, posX) = FirstPayment
     posX = posX + 1: ProjectInfo(posY, posX) = MiddlePayment
@@ -399,26 +399,26 @@ Public Sub PrintInfo()
     posX = posX + 1: ProjectInfo(posY, posX) = MiddlePaymentMonth
     posX = posX + 1: ProjectInfo(posY, posX) = FinalPaymentMonth
 
-    For i = 1 To MAX_ACT
+    For I = 1 To MAX_ACT
         Dim strAct As String, strNum As String
-        strNum = Format(i, "#0")
+        strNum = Format(I, "#0")
         strAct = "Activity" & strNum
 
         posX = 1: posY = posY + 1: ProjectInfo(posY, posX) = strAct
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).Duration
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).StartDate
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).EndDate
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).HighSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).MidSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).LowSkill
-    Next i
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).Duration
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).StartDate
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).EndDate
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).HighSkill
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).MidSkill
+        posX = posX + 1: ProjectInfo(posY, posX) = Activities(I).LowSkill
+    Next I
 
     posY = (ProjectNum - 1) * PRJ_SHEET_HEADER_H + 4
 
     With gWsProject
         Dim RNG1 As Object
         Set RNG1 = .Range(.Cells(posY, 1), .Cells(posY + PRJ_SHEET_HEADER_H - 1, PRJ_SHEET_HEADER_W))
-        RNG1.Value = ProjectInfo
+        RNG1.value = ProjectInfo
         RNG1.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
     End With
 End Sub
