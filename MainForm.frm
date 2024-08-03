@@ -238,16 +238,17 @@ End Enum
 Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
-    
+    Dim i   As Integer ' song 대문자로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라...
+
     ' 입력값들을 업데이트 한다.
-    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
-    'GlobalEnv.Cash_Init
-    'GlobalEnv.Hr_Init_H
-    'GlobalEnv.Hr_Init_L
-    'GlobalEnv.Hr_Init_M
-    'GlobalEnv.Hr_LeadTime
-    'GlobalEnv.Problem
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
+    GlobalEnv.Hr_Init_H = txtHr_H.Text
+    GlobalEnv.Hr_Init_L = txtHr_M.Text
+    GlobalEnv.Hr_Init_M = txtHr_L.Text
+    GlobalEnv.Hr_LeadTime = txtLeadTime.Text
+    GlobalEnv.Cash_Init = txtCash.Text
+    GlobalEnv.ProblemCnt = txtProblemCount.Text
 
     '1. 기존 프로젝트들을 그대로 사용
     If gProjectLoadOrCreate = LoadOrCreate.Load Then
@@ -257,6 +258,9 @@ Private Sub btnGenBoardNProject_Click()
         Else
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
             'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("주"))
+            
+            ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
+            ' song 파일안의 데이터 유효성 검증을 더 하자.
             Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
         End If
         
@@ -268,7 +272,6 @@ Private Sub btnGenBoardNProject_Click()
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
             
         Else
-            Dim i As Integer
             
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
             
@@ -314,7 +317,7 @@ Private Sub Form_Load()
     Call CheckDataFile
     
     ' data.xlsm 파일에서 시뮬레이션의 기본설정값들을 가져온다.
-    Call LoadExcelEnv
+    Call LoadEnvFromExcel
         
     ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
     gProjectLoadOrCreate = LoadOrCreate.Load
@@ -328,7 +331,7 @@ Private Sub Form_Load()
     txtHr_M = GlobalEnv.Hr_Init_M                       '21
     txtHr_L = GlobalEnv.Hr_Init_L                       '6
     txtLeadTime = GlobalEnv.Hr_LeadTime                 '3
-    txtProblemCount = GlobalEnv.Problem                 '100
+    txtProblemCount = GlobalEnv.ProblemCnt              '100
         
 End Sub
 
@@ -410,7 +413,7 @@ End Sub
 
 
 ' 엑셀 시트에서 초기화에 필요한 값들을 가져온다.
-Sub LoadExcelEnv()
+Sub LoadEnvFromExcel()
     
     Dim posY As Long, posX As Long
     
@@ -423,7 +426,7 @@ Sub LoadExcelEnv()
     posY = posY + 1: GlobalEnv.Hr_Init_M = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Hr_LeadTime = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Cash_Init = .Cells(posY, posX)
-    posY = posY + 1: GlobalEnv.Problem = .Cells(posY, posX)
+    posY = posY + 1: GlobalEnv.ProblemCnt = .Cells(posY, posX)
     End With
     
 End Sub

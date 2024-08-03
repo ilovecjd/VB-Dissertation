@@ -54,7 +54,7 @@ Type Environment
     Hr_Init_L As Integer
     Hr_LeadTime As Integer
     Cash_Init As Integer
-    Problem As Integer
+    ProblemCnt As Integer
 End Type
 
 Type Activity
@@ -132,7 +132,7 @@ Sub Prologue(TableInit As Integer)
     
 End Sub
 
-
+' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
 Sub LoadTablesFromExcel()
     Call LoadOrderTable
     Call LoadProjects
@@ -140,19 +140,24 @@ End Sub
 
 
 Private Function LoadOrderTable() As Boolean
-    ReDim gOrderTable(2, GlobalEnv.SimulationWeeks)
-
+    
     Dim startIndex As Long
+    
     startIndex = ORDER_TABLE_INDEX + 2
-
+    
+    ReDim gOrderTable(2, GlobalEnv.SimulationWeeks)
+    
     With gWsDashboard
         gOrderTable = .Range(.Cells(startIndex, 2), .Cells(startIndex + 1, GlobalEnv.SimulationWeeks + 1)).value
     End With
 
     gTotalProjectNum = gOrderTable(1, GlobalEnv.SimulationWeeks) + gOrderTable(2, GlobalEnv.SimulationWeeks)
+    
 End Function
 
+' data.xlsm 파일에서 프로젝트를 읽어들인다.
 Private Function LoadProjects() As Boolean
+
     Dim prjID As Integer
     Dim startRow As Long
     Dim endRow As Long
@@ -162,6 +167,7 @@ Private Function LoadProjects() As Boolean
     ReDim gProjectTable(gTotalProjectNum)
 
     For prjID = 1 To gTotalProjectNum
+    
         Set tempPrj = New clsProject
         startRow = PROJECT_TABLE_INDEX + (prjID - 1) * PRJ_SHEET_HEADER_H + 1
         endRow = startRow + PRJ_SHEET_HEADER_H - 1
@@ -208,7 +214,9 @@ Private Function LoadProjects() As Boolean
         Next i
 
         Set gProjectTable(prjID) = tempPrj
+        
     Next prjID
+    
 End Function
 
 ' 발생한 프로젝트의 갯수를 테이블에 기록한다.
@@ -284,18 +292,18 @@ End Function
 ' 따라서 1 기반 배열로 변환하는 코드를 추가 함
 Public Sub PrintProjectHeader()
 
-    Dim MyArray() As Variant, TempArray() As String, strHeader As String
+    Dim MyArray() As Variant, tempArray() As String, strHeader As String
     
     Call ClearSheet(gWsProject) '시트의 모든 내용을 지우고 셀 병합 해제
     
     strHeader = "타입,순번,발주일,시작가능,기간,시작,수익,경험,성공%,nCF,CF1%,CF2%,CF3%,선금,중도,잔금"
-    TempArray = Split(strHeader, ",")
-    MyArray = ConvertToBase1(TempArray) ' TempArray를 1 기반 배열로 변환
+    tempArray = Split(strHeader, ",")
+    MyArray = ConvertToBase1(tempArray) ' TempArray를 1 기반 배열로 변환
     Call PrintArrayWithLine(gWsProject, 1, 1, MyArray)
     
     strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3,,,,"
-    TempArray = Split(strHeader, ",")
-    MyArray = ConvertToBase1(TempArray)
+    tempArray = Split(strHeader, ",")
+    MyArray = ConvertToBase1(tempArray)
     Call PrintArrayWithLine(gWsProject, 2, 1, MyArray)
     
 End Sub
