@@ -318,7 +318,7 @@ Private Sub Form_Load()
         
     ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
     gProjectLoadOrCreate = LoadOrCreate.Load
-    Option_Load.Value = True
+    Option_Load.value = True
 
     ' 화면에 보이는 초기 값 설정
     txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
@@ -529,16 +529,18 @@ Private Sub Run_Click()
     Dim Company As clsCompany
     
     Set Company = New clsCompany
-    Call Company.Init(1, gTotalProjectNum)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
+    Call Company.Init(1)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
 
     Debug.Print VBA.String(200, vbNewLine)
     
     For i = 1 To GlobalEnv.SimulationWeeks
         Call Company.Decision(i)    ' i번째 기간에 결정해야 할 일들
-        Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
-        Call PrintSimulationResults(Company)
-        'Call dasPrintDecision(Arr)
+        'Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
+        'Call PrintSimulationResults(Company)
     Next
+    
+    Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
+    Call PrintSimulationResults(Company)
     
 End Sub
 

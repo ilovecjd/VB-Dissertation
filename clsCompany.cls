@@ -45,24 +45,24 @@ Public Property Get PropertyDoingTable() As Integer()
     PropertyDoingTable = comDoingTable
 End Property
 
-Public Property Let PropertyDoingTable(Value() As Integer)
-    comDoingTable = Value
+Public Property Let PropertyDoingTable(value() As Integer)
+    comDoingTable = value
 End Property
 
 Public Property Get PropertyDoneTable() As Integer()
     PropertyDoneTable = comDoneTable
 End Property
 
-Public Property Let PropertyDoneTable(Value() As Integer)
-    comDoneTable = Value
+Public Property Let PropertyDoneTable(value() As Integer)
+    comDoneTable = value
 End Property
 
 Public Property Get PropertyDefferTable() As Integer()
     PropertyDefferTable = comDefferTable
 End Property
 
-Public Property Let PropertyDefferTable(Value() As Integer)
-    comDefferTable = Value
+Public Property Let PropertyDefferTable(value() As Integer)
+    comDefferTable = value
 End Property
 
 
@@ -74,7 +74,8 @@ Private Sub Class_Initialize()
 
 End Sub
 
-Public Sub Init(Id As Integer, ProjectNum As Integer)
+' company ID (입력), 프로젝트와 인력, 자금을 관리할 테이블 생성
+Public Sub Init(Id As Integer)
 
     comID = Id
     
@@ -94,12 +95,11 @@ Public Sub Init(Id As Integer, ProjectNum As Integer)
     ReDim comTotalHR_MTable(1 To GlobalEnv.SimulationWeeks)  ' 회사가 보유한 모든 중급자
     ReDim comTotalHR_LTable(1 To GlobalEnv.SimulationWeeks)  ' 회사가 보유한 모든 초급자
 
-    comTotalHR_HTable(1) = 4    ' 회사가 보유한 상급자 초기화
-    comTotalHR_MTable(1) = 4    ' 회사가 보유한 중급자 초기화
-    comTotalHR_LTable(1) = 2    ' 회사가 보유한 초급자 초기화
+    comTotalHR_HTable(1) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 초기화
+    comTotalHR_MTable(1) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
+    comTotalHR_LTable(1) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
 
     comProjectTable = gProjectTable
-    
 
 End Sub
 
@@ -114,9 +114,7 @@ End Sub
 '' 이번 기간에 결정할 일들. 프로젝트의 신규진행, 멈춤, 인원증감 결정
 Public Function Decision(week As Integer)
 
-    ' 1. 완료프로젝트 검사 및 진행프로젝트 업데이트
-    ' 지난주에 진행중인 프로젝트중 완료된 것이 있는가?
-    ' 완료되지 않은 프로젝트들만 이번주로 이관
+    ' 1. 지난주에 진행중인 프로젝트중 완료되지 않은 프로젝트들만 이번주로 이관
     Call CheckLastWeek(week)
 
     ' 2. 신규 프로젝트 선택 및 진행프로젝트 업데이트
@@ -202,7 +200,10 @@ Private Function comCheckHR(cProject As clsProject)
 
 End Function
 
-' 지난주에 완료된 프로젝트들이 있는지 확인한다.
+' 완료프로젝트 검사 및 진행프로젝트 업데이트
+' 1. 지난 기간의 정보를 이번기간에 복사하고
+' 2. 지난 기간에 진행중인 프로젝트중 완료된 것이 있는가?
+' 3. 완료된 프로젝트들만 이번기간에서 삭제
 Private Function CheckLastWeek(week As Integer)
 
     Dim cProject As clsProject
@@ -220,31 +221,37 @@ Private Function CheckLastWeek(week As Integer)
         Exit Function
     End If
 
-    ' 지난 기간의 정보를 이번기간에 복사하고 복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
+    ' 지난 기간의 정보를 이번기간에 복사하고
     Call CopyLastToCurrent(comDoingTable, week, cnt)
 
+    '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
     For i = 1 To cnt
 
-        Id = comDoingTable(i + 1, week)
+        Id = comDoingTable(i + 1, week) ' 프로젝트 객체의 ID를 가져온다
 
         If Id = 0 Then
             Exit For
         End If
 
-        Set cProject = comProjectTable(Id)
+        Set cProject = comProjectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
         
-        If cProject.ProjectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
-            Debug.Print "내부 프로젝트"
-        Else
+        If cProject.ProjectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
+        
+            ' 프로젝트 Object 검사
             If week = (cProject.StartDate + cProject.ProjectDuration - 1) Then ' 지난번에 끝났으면
                 Call RemoveFromTable(comDoingTable, comDoingTableSize, week, cProject.ProjectNum) ' doing table에서 삭제
                 i = i - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
             End If
+            
+        Else
+            Debug.Print "내부 프로젝트"
+            
         End If
     Next
 
 End Function
 
+' 지난 기간의 정보를 이번기간에 복사하고 복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
 ' 복사할 테이블, 현재기간, 이전기간의 프로젝트 갯수
 Private Function CopyLastToCurrent(prjTable As Variant, ByVal currentWeek As Integer, ByVal lastProjectCnt As Integer)
 
