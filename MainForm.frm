@@ -238,7 +238,7 @@ End Enum
 Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
-    Dim i   As Integer ' song 대문자로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라...
+    Dim index   As Integer ' song 대문자로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라...
 
     ' 입력값들을 업데이트 한다.
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
@@ -261,7 +261,7 @@ Private Sub btnGenBoardNProject_Click()
             
             ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
             ' song 파일안의 데이터 유효성 검증을 더 하자.
-            Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
+            Call LoadTablesFromExcel
         End If
         
     '2. 프로젝트를 새롭게 생성
@@ -275,9 +275,9 @@ Private Sub btnGenBoardNProject_Click()
             
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
             
-            For i = 1 To GlobalEnv.SimulationWeeks
-                gPrintDurationTable(i) = i
-            Next i
+            For index = 1 To GlobalEnv.SimulationWeeks
+                gPrintDurationTable(index) = index
+            Next index
         
             Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
             Call CreateProjects     ' 프로젝트를 생성한다.
@@ -526,7 +526,7 @@ End Sub
 ' 시뮬레이션을 시작한다.
 Private Sub Run_Click()
 
-    Dim i As Integer
+    Dim index As Integer
     'song 시뮬레이션이 준비되었는지 체크해야함.
     
     Dim Company As clsCompany
@@ -536,8 +536,8 @@ Private Sub Run_Click()
 
     Debug.Print VBA.String(200, vbNewLine)
     
-    For i = 1 To GlobalEnv.SimulationWeeks
-        Call Company.Decision(i)    ' i번째 기간에 결정해야 할 일들
+    For index = 1 To GlobalEnv.SimulationWeeks
+        Call Company.Decision(index)    ' i번째 기간에 결정해야 할 일들
         'Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
         'Call PrintSimulationResults(Company)
     Next
@@ -603,7 +603,7 @@ End Function
 Private Function CheckDataFile() As Boolean
         
     Dim arrHeader As Variant
-    Dim posY As Long, posX As Long, i As Integer
+    Dim posY As Long, posX As Long, I As Integer
     Dim strErr As String
     
     CheckDataFile = True
@@ -618,17 +618,17 @@ Private Function CheckDataFile() As Boolean
                 
         posX = 1: posY = 2
         
-        For i = LBound(arrHeader) To UBound(arrHeader)
-            If arrHeader(i, 1) = .Cells(posY, posX) Then
+        For I = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(I, 1) = .Cells(posY, posX) Then
             
             Else
-                strErr = strErr & arrHeader(i, 1) & ", "
+                strErr = strErr & arrHeader(I, 1) & ", "
                 CheckDataFile = False
             End If
             
             posY = posY + 1
             
-        Next i
+        Next I
         
     End With
         
@@ -642,17 +642,17 @@ Private Function CheckDataFile() As Boolean
                 
         posX = 1: posY = 2
         
-        For i = LBound(arrHeader) To UBound(arrHeader)
-            If arrHeader(i, 1) = .Cells(posY, posX) Then
+        For I = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(I, 1) = .Cells(posY, posX) Then
             
             Else
-                strErr = strErr & arrHeader(i, 1) & ", "
+                strErr = strErr & arrHeader(I, 1) & ", "
                 CheckDataFile = False
             End If
             
             posY = posY + 1
             
-        Next i
+        Next I
         
     End With
     
