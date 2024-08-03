@@ -235,7 +235,7 @@ End Function
 
 
 
-' 프로젝트를 생성한다.
+' 프로젝트를 생성하고
 Public Function CreateProjects()
 
     Dim week As Integer
@@ -279,7 +279,7 @@ End Function
 
 
 
-' 프로젝트들을 출력할 엑셀 시트에 헤더를 생성한다.
+' PROJECT_SHEET_NAME 시트에 헤더를 생성한다.
 ' VB 6.0에서 Option Base 1을 사용했더라도, Split 함수는 기본적으로 0 기반 배열을 반환
 ' 따라서 1 기반 배열로 변환하는 코드를 추가 함
 Public Sub PrintProjectHeader()
@@ -430,7 +430,7 @@ Function PrintDashboard()
     Call ClearSheet(gWsDashboard)
 
     Dim arrHeader As Variant
-    arrHeader = Array("월", "누계", "발주")
+    arrHeader = Array("주", "누계", "발주")
     arrHeader = PivotArray(arrHeader)
 
     Call PrintArrayWithLine(gWsDashboard, 2, 1, arrHeader)

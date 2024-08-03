@@ -9,6 +9,14 @@ Begin VB.Form MainForm
    ScaleHeight     =   8400
    ScaleWidth      =   14295
    StartUpPosition =   3  'Windows 기본값
+   Begin VB.CommandButton ScreenUpdating 
+      Caption         =   "Command1"
+      Height          =   615
+      Left            =   6600
+      TabIndex        =   22
+      Top             =   6120
+      Width           =   1695
+   End
    Begin VB.CommandButton Run 
       Caption         =   "시뮬레이션시작"
       Height          =   615
@@ -219,6 +227,14 @@ Enum LoadOrCreate
 End Enum
 
 
+' 프로젝트들을 생성 한다.
+' 1. 기존 프로젝트들을 그대로 사용
+'   1.1 기존 data.xlsm 파일에서 로드
+'
+' 2. 프로젝트를 새롭게 생성
+'   2.1 환경변수 업데이트
+'   2.2 새로운 프로젝트들 생성
+'   2.2 data.xlsm 파일의 시트들 업데이트
 Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
@@ -240,26 +256,29 @@ Private Sub btnGenBoardNProject_Click()
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
         Else
             ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("월"))
+            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("주"))
             Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
         End If
         
-    '2. 신규 프로젝트 생성
+    '2. 프로젝트를 새롭게 생성
     Else
         Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
+        
         If (vbNo = Res) Then
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
             
         Else
-            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
             Dim i As Integer
+            
+            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
+            
             For i = 1 To GlobalEnv.SimulationWeeks
                 gPrintDurationTable(i) = i
             Next i
         
-            Call CreateOrderTable   ' Order 테이블을 생성
+            Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
             Call CreateProjects     ' 프로젝트를 생성한다.
-            Call PrintDashboard     ' 대시보드를 시트에 출력한다
+            Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
             Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
             Call PrintProjectAll    ' 프로젝트 전체를 출력한다
             
@@ -299,7 +318,7 @@ Private Sub Form_Load()
         
     ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
     gProjectLoadOrCreate = LoadOrCreate.Load
-    Option_Load.value = True
+    Option_Load.Value = True
 
     ' 화면에 보이는 초기 값 설정
     txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
@@ -376,11 +395,12 @@ Public Sub ModifyExcel()
     If Err.Number <> 0 Then ' 워크북이 이미 열려 있으면
         Err.Clear
         Set xlWb = xlApp.Workbooks(filePath)
-        
+        ' song 엑셀의 인스턴트만 남아 있는 경우에 대한 예외 처리 필요.
     End If
     
     On Error GoTo 0 '오류 객체에 저장된 값을 초기값으로 변경
     
+    ' song 엑셀의 인스턴트만 남아 있는 경우에 대한 예외 처리 필요.
     Set gWsParameters = xlWb.Sheets(PARAMETERS_SHEET_NAME)
     Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
     Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
@@ -509,11 +529,11 @@ Private Sub Run_Click()
     Dim Company As clsCompany
     
     Set Company = New clsCompany
-    Call Company.Init(1, 200)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
+    Call Company.Init(1, gTotalProjectNum)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
 
     Debug.Print VBA.String(200, vbNewLine)
     
-    For i = 1 To GlobalEnv.SimulationWeeks 'song ==> 일단 10주만 돌려보자.
+    For i = 1 To GlobalEnv.SimulationWeeks
         Call Company.Decision(i)    ' i번째 기간에 결정해야 할 일들
         Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
         Call PrintSimulationResults(Company)
@@ -545,22 +565,28 @@ Private Function PrintSimulationResults(Company As clsCompany)
 
     Dim startRow    As Long
     Dim arrHeader   As Variant
-    arrHeader = Array("월", "누계", "prjNum")
-
+    Dim tempArray() As Integer
+        
+    arrHeader = Array("주", "누계", "prjNum")
+    arrHeader = PivotArray(arrHeader)
+    
     startRow = DONG_TABLE_INDEX
+    tempArray = Company.PropertyDoingTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDoingTable)      ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)      ' 내용을 적는다.
 
     startRow = startRow + Company.comDoingTableSize + 2
+    tempArray = Company.PropertyDoneTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDoneTable)       ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)       ' 내용을 적는다.
 
     startRow = startRow + Company.comDoneTableSize + 2
+    tempArray = Company.PropertyDefferTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, Company.PropertyDefferTable)     ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)     ' 내용을 적는다.
 
 
     Exit Function
@@ -606,7 +632,7 @@ Private Function CheckDataFile() As Boolean
     
         strErr = strErr & vbNewLine & DBOARD_SHEET_NAME & ": "
         
-        arrHeader = Array("월", "누계", "발주")
+        arrHeader = Array("주", "누계", "발주")
         arrHeader = PivotArray(arrHeader)
                 
         posX = 1: posY = 2
@@ -634,3 +660,6 @@ Private Function CheckDataFile() As Boolean
     
 End Function
 
+Private Sub ScreenUpdating_Click()
+xlApp.ScreenUpdating = True
+End Sub
