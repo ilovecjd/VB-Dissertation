@@ -170,6 +170,7 @@ Private Function LoadProjects() As Boolean
 
     For prjID = 1 To gTotalProjectNum
     
+        ' 프로젝트 생성 및 설정
         Set tempPrj = New clsProject
         startRow = PROJECT_TABLE_INDEX + (prjID - 1) * PRJ_SHEET_HEADER_H + 1
         endRow = startRow + PRJ_SHEET_HEADER_H - 1
@@ -188,6 +189,7 @@ Private Function LoadProjects() As Boolean
         tempPrj.Experience = prjInfo(1, 8)
         tempPrj.SuccessProbability = prjInfo(1, 9)
         
+        ' Cash Folwer 설정
         Dim tempCF(1 To MAX_N_CF) As Integer
         Dim index As Integer
         For index = 1 To MAX_N_CF
@@ -205,8 +207,8 @@ Private Function LoadProjects() As Boolean
         tempPrj.FinalPaymentMonth = prjInfo(2, 13)
         
         
+        ' Activity 설정. Activity는 메모리 할당 필요!!!!!
         Dim tempAct As Activity_
-        
         For index = 1 To tempPrj.NumActivities
             tempAct.duration = prjInfo(2 + index, 2)
             tempAct.StartDate = prjInfo(2 + index, 3)
