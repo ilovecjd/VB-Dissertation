@@ -11,7 +11,6 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = True
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-
 Option Explicit
 Option Base 1
 
@@ -20,26 +19,26 @@ Private ProjectInfo()       As Variant ' 출력할 헤더를 기록하는 배열
 
 
 ' 프로젝트 속성
-Public ProjectType As Integer ' 프로젝트 타입 (0: 외부 / 1: 내부)
+Public projectType As Integer ' 프로젝트 타입 (0: 외부 / 1: 내부)
 Public projectNum As Integer ' 프로젝트의 번호
 
-Public OrderDate As Integer ' 발주일
-Public PossibleStartDate As Integer ' 시작 가능일
-Public ProjectDuration As Integer ' 프로젝트의 총 기간
-Public StartDate As Integer ' 시작일 (0: 미시작)
-Public Profit As Double ' 총 기대 수익 (HR 종속)
-Public Experience As Integer ' 경험 (0: 무경험 1: 유경험)
-Public SuccessProbability As Integer ' 성공 확률
+Public orderDate As Integer ' 발주일
+Public possiblestartDate As Integer ' 시작 가능일
+Public projectDuration As Integer ' 프로젝트의 총 기간
+Public startDate As Integer ' 시작일 (0: 미시작)
+Public profit As Double ' 총 기대 수익 (HR 종속)
+Public experience As Integer ' 경험 (0: 무경험 1: 유경험)
+Public successProbability As Integer ' 성공 확률
 
 ' 현금 흐름
-Public NumCashFlows As Integer ' 비용 지급 횟수
-Private CashFlows() As Integer ' 용역비를 받는 비율을 기록하는 배열
-Public FirstPayment As Long ' 선금 액수
-Public MiddlePayment As Long ' 2차 지급 액수
-Public FinalPayment As Long ' 3차 지급 액수
-Public FirstPaymentMonth As Integer ' 선금 지급일
-Public MiddlePaymentMonth As Integer ' 2차 지급일
-Public FinalPaymentMonth As Integer ' 3차 지급일`
+Public numcashFlows As Integer ' 비용 지급 횟수
+Private cashFlows() As Integer ' 용역비를 받는 비율을 기록하는 배열
+Public firstPayment As Long ' 선금 액수
+Public middlePayment As Long ' 2차 지급 액수
+Public finalPayment As Long ' 3차 지급 액수
+Public firstPaymentMonth As Integer ' 선금 지급일
+Public middlePaymentMonth As Integer ' 2차 지급일
+Public finalPaymentMonth As Integer ' 3차 지급일`
 
 ' 활동
 Public NumActivities As Integer ' 총 활동 수
@@ -65,9 +64,9 @@ Public Function GetActivityDuration(index As Integer) As Integer
     GetActivityDuration = activities(index).duration
 End Function
 
-' 활동의 StartDate를 반환하는 함수
-Public Function GetActivityStartDate(index As Integer) As Integer
-    GetActivityStartDate = activities(index).StartDate
+' 활동의 startDate를 반환하는 함수
+Public Function GetActivitystartDate(index As Integer) As Integer
+    GetActivitystartDate = activities(index).startDate
 End Function
 
 ' 활동의 EndDate를 반환하는 함수
@@ -103,9 +102,9 @@ Public Sub SetActivityDuration(index As Integer, value As Integer)
     activities(index).duration = value
 End Sub
 
-' 활동의 StartDate 설정
-Public Sub SetActivityStartDate(index As Integer, value As Integer)
-    activities(index).StartDate = value
+' 활동의 startDate 설정
+Public Sub SetActivitystartDate(index As Integer, value As Integer)
+    activities(index).startDate = value
 End Sub
 
 ' 활동의 EndDate 설정
@@ -128,8 +127,8 @@ Public Sub SetActivityLowSkill(index As Integer, value As Integer)
     activities(index).LowSkill = value
 End Sub
 
-Public Property Get PrjCashFlows() As Integer()
-    PrjCashFlows = CashFlows
+Public Property Get PrjcashFlows() As Integer()
+    PrjcashFlows = cashFlows
 End Property
 
 Public Property Get PrjActivities() As Integer()
@@ -140,13 +139,13 @@ End Property
  '   Activities(i) = Value
 'End Sub
 
-Public Sub SetPrjCashFlows(value() As Integer)
-    CashFlows = value
+Public Sub SetPrjcashFlows(value() As Integer)
+    cashFlows = value
 End Sub
 
 Private Sub Class_Initialize()
     ReDim ProjectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
-    ReDim CashFlows(1 To MAX_N_CF)
+    ReDim cashFlows(1 To MAX_N_CF)
     ReDim activities(1 To MAX_ACT)
 End Sub
 
@@ -157,20 +156,20 @@ End Sub
 Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
 
     ' 전달받은 값들로 초기화
-    ProjectType = initType
+    projectType = initType
     projectNum = initNum
 
     ' 프로젝트 생성을 위해 필요한 값들을 생성한다.
-    OrderDate = ODate ' 발주일
-    PossibleStartDate = ODate + Int(Rnd() * 4) ' 시작 가능일
-    StartDate = 0 ' 시작일 (0: 미시작)
-    'Profit                 = 100   ' 총 기대 수익 (HR 종속 MakeProjectHRandProfit 함수에서 생성)
-    Experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
-    SuccessProbability = 100 '   수주 성공 확률
-    NumCashFlows = MAX_N_CF ' 비용 지급 횟수 (규모에 따라 변경 가능)
+    orderDate = ODate ' 발주일
+    possiblestartDate = ODate + Int(Rnd() * 4) ' 시작 가능일
+    startDate = 0 ' 시작일 (0: 미시작)
+    'profit                 = 100   ' 총 기대 수익 (HR 종속 MakeProjectHRandprofit 함수에서 생성)
+    experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
+    successProbability = 100 '   수주 성공 확률
+    numcashFlows = MAX_N_CF ' 비용 지급 횟수 (규모에 따라 변경 가능)
 
     Call CreateActivities
-    Call CalculateHRandProfit
+    Call CalculateHRandprofit
     Call CalculatePaymentSchedule
     
 End Sub
@@ -223,7 +222,7 @@ Public Sub CreateActivities()
     Lb = PrjAttribute(prjType, 4)
     UB = PrjAttribute(prjType, 5)
     totalDuration = RandomBetween(Lb, UB)
-    ProjectDuration = totalDuration
+    projectDuration = totalDuration
 
     Lb = 0
     UB = 0
@@ -257,20 +256,20 @@ Public Sub CreateActivities()
 
         If I = 1 Then
             activities(I).duration = tempDuration
-            activities(I).StartDate = 1
+            activities(I).startDate = 1
             activities(I).EndDate = tempDuration
         ElseIf I = 2 Then
             activities(I).duration = totalDuration - activities(1).duration
-            activities(I).StartDate = activities(1).EndDate + 1
+            activities(I).startDate = activities(1).EndDate + 1
             activities(I).EndDate = totalDuration
         ElseIf I = 3 Then
             activities(I).duration = tempDuration
-            activities(I).StartDate = totalDuration - tempDuration
+            activities(I).startDate = totalDuration - tempDuration
             activities(I).EndDate = totalDuration
         Else
             activities(I).duration = tempDuration
-            activities(I).StartDate = activities(3).StartDate - tempDuration - 1
-            activities(I).EndDate = activities(3).StartDate - 1
+            activities(I).startDate = activities(3).startDate - tempDuration - 1
+            activities(I).EndDate = activities(3).startDate - 1
         End If
     Next I
 End Sub
@@ -288,7 +287,7 @@ Public Function RandomBetween(minValue As Integer, maxValue As Integer) As Integ
 End Function
 
 ' 활동별 투입 인력 생성, 프로젝트 전체 기대 수익 생성 및 기록
-Public Sub CalculateHRandProfit()
+Public Sub CalculateHRandprofit()
     Dim I As Integer
     Dim j As Integer
     Dim high As Integer, mid As Integer, low As Integer
@@ -311,7 +310,7 @@ Public Sub CalculateHRandProfit()
         low = low + activities(I).LowSkill * activities(I).duration
     Next I
 
-    Profit = CalculateTotalLaborCost(high, mid, low)
+    profit = CalculateTotalLaborCost(high, mid, low)
 End Sub
 
 ' 등급별 투입인력 계산 및 프로젝트의 수익 생성
@@ -361,77 +360,77 @@ Public Sub CalculatePaymentSchedule()
     Dim paymentRatio As Integer
     Dim totalPayments As Integer
 
-    FirstPaymentMonth = 1
+    firstPaymentMonth = 1
 
     Randomize
 
-    If ProjectDuration < 6 Then
+    If projectDuration < 6 Then
         paymentType = Int(3 * Rnd + 1)
 
         Select Case paymentType
             Case 1
-                FirstPayment = Profit * 0.3: CashFlows(1) = 30: CashFlows(2) = 70
+                firstPayment = profit * 0.3: cashFlows(1) = 30: cashFlows(2) = 70
             Case 2
-                FirstPayment = Profit * 0.4: CashFlows(1) = 40: CashFlows(2) = 60
+                firstPayment = profit * 0.4: cashFlows(1) = 40: cashFlows(2) = 60
             Case 3
-                FirstPayment = Profit * 0.5: CashFlows(1) = 50: CashFlows(2) = 50
+                firstPayment = profit * 0.5: cashFlows(1) = 50: cashFlows(2) = 50
         End Select
 
-        MiddlePayment = Profit - FirstPayment
+        middlePayment = profit - firstPayment
         totalPayments = 2
-        MiddlePaymentMonth = ProjectDuration
-    ElseIf ProjectDuration < 12 Then
+        middlePaymentMonth = projectDuration
+    ElseIf projectDuration < 12 Then
         paymentType = Int(10 * Rnd + 1)
 
         If paymentType <= 3 Then
             paymentRatio = Int(3 * Rnd + 1)
             Select Case paymentRatio
                 Case 1
-                    FirstPayment = Profit * 0.3: CashFlows(1) = 30: CashFlows(2) = 70
+                    firstPayment = profit * 0.3: cashFlows(1) = 30: cashFlows(2) = 70
                 Case 2
-                    FirstPayment = Profit * 0.4: CashFlows(1) = 40: CashFlows(2) = 60
+                    firstPayment = profit * 0.4: cashFlows(1) = 40: cashFlows(2) = 60
                 Case 3
-                    FirstPayment = Profit * 0.5: CashFlows(1) = 50: CashFlows(2) = 50
+                    firstPayment = profit * 0.5: cashFlows(1) = 50: cashFlows(2) = 50
             End Select
-            MiddlePayment = Profit - FirstPayment
+            middlePayment = profit - firstPayment
             totalPayments = 2
-            MiddlePaymentMonth = ProjectDuration
+            middlePaymentMonth = projectDuration
         Else
             paymentRatio = Int(10 * Rnd + 1)
             If paymentRatio <= 6 Then
-                FirstPayment = Profit * 0.3
-                MiddlePayment = Profit * 0.3
-                CashFlows(1) = 30
-                CashFlows(2) = 30
-                CashFlows(3) = 40
+                firstPayment = profit * 0.3
+                middlePayment = profit * 0.3
+                cashFlows(1) = 30
+                cashFlows(2) = 30
+                cashFlows(3) = 40
             Else
-                FirstPayment = Profit * 0.3
-                MiddlePayment = Profit * 0.4
-                CashFlows(1) = 30
-                CashFlows(2) = 40
-                CashFlows(3) = 30
+                firstPayment = profit * 0.3
+                middlePayment = profit * 0.4
+                cashFlows(1) = 30
+                cashFlows(2) = 40
+                cashFlows(3) = 30
             End If
 
-            FinalPayment = Profit - FirstPayment - MiddlePayment
+            finalPayment = profit - firstPayment - middlePayment
             totalPayments = 3
-            MiddlePaymentMonth = WorksheetFunction.Ceiling(ProjectDuration / 2, 1)
-            FinalPaymentMonth = ProjectDuration
+            middlePaymentMonth = WorksheetFunction.Ceiling(projectDuration / 2, 1)
+            finalPaymentMonth = projectDuration
         End If
     Else
-        FirstPayment = Profit * 0.3
-        MiddlePayment = Profit * 0.4
-        FinalPayment = Profit - FirstPayment - MiddlePayment
+        firstPayment = profit * 0.3
+        middlePayment = profit * 0.4
+        finalPayment = profit - firstPayment - middlePayment
 
-        CashFlows(1) = 30
-        CashFlows(2) = 40
-        CashFlows(3) = 30
+        cashFlows(1) = 30
+        cashFlows(2) = 40
+        cashFlows(3) = 30
 
         totalPayments = 3
-        MiddlePaymentMonth = WorksheetFunction.Ceiling(ProjectDuration / 2, 1)
-        FinalPaymentMonth = ProjectDuration
+        middlePaymentMonth = WorksheetFunction.Ceiling(projectDuration / 2, 1)
+        finalPaymentMonth = projectDuration
     End If
 
-    NumCashFlows = totalPayments
+    numcashFlows = totalPayments
 End Sub
 
 ' 주어진 확률에 따라서 1 또는 0을 반환하는 함수
@@ -453,30 +452,30 @@ Public Sub PrintInfo()
     Dim posX As Integer
     Dim posY As Integer
 
-    posX = 1: posY = 1: ProjectInfo(posY, posX) = ProjectType
+    posX = 1: posY = 1: ProjectInfo(posY, posX) = projectType
     posX = posX + 1: ProjectInfo(posY, posX) = projectNum
-    posX = posX + 1: ProjectInfo(posY, posX) = OrderDate
-    posX = posX + 1: ProjectInfo(posY, posX) = PossibleStartDate
-    posX = posX + 1: ProjectInfo(posY, posX) = ProjectDuration
-    posX = posX + 1: ProjectInfo(posY, posX) = StartDate
-    posX = posX + 1: ProjectInfo(posY, posX) = Profit
-    posX = posX + 1: ProjectInfo(posY, posX) = Experience
-    posX = posX + 1: ProjectInfo(posY, posX) = SuccessProbability
-    posX = posX + 1: ProjectInfo(posY, posX) = NumCashFlows
+    posX = posX + 1: ProjectInfo(posY, posX) = orderDate
+    posX = posX + 1: ProjectInfo(posY, posX) = possiblestartDate
+    posX = posX + 1: ProjectInfo(posY, posX) = projectDuration
+    posX = posX + 1: ProjectInfo(posY, posX) = startDate
+    posX = posX + 1: ProjectInfo(posY, posX) = profit
+    posX = posX + 1: ProjectInfo(posY, posX) = experience
+    posX = posX + 1: ProjectInfo(posY, posX) = successProbability
+    posX = posX + 1: ProjectInfo(posY, posX) = numcashFlows
 
     For I = 1 To MAX_N_CF
-        posX = posX + 1: ProjectInfo(posY, posX) = CashFlows(I)
+        posX = posX + 1: ProjectInfo(posY, posX) = cashFlows(I)
     Next I
 
-    posX = posX + 1: ProjectInfo(posY, posX) = FirstPayment
-    posX = posX + 1: ProjectInfo(posY, posX) = MiddlePayment
-    posX = posX + 1: ProjectInfo(posY, posX) = FinalPayment
+    posX = posX + 1: ProjectInfo(posY, posX) = firstPayment
+    posX = posX + 1: ProjectInfo(posY, posX) = middlePayment
+    posX = posX + 1: ProjectInfo(posY, posX) = finalPayment
 
     posX = 1: posY = 2: ProjectInfo(posY, posX) = "ActivityCnt"
     posX = posX + 1: ProjectInfo(posY, posX) = NumActivities
-    posX = posX + 9: ProjectInfo(posY, posX) = FirstPaymentMonth
-    posX = posX + 1: ProjectInfo(posY, posX) = MiddlePaymentMonth
-    posX = posX + 1: ProjectInfo(posY, posX) = FinalPaymentMonth
+    posX = posX + 9: ProjectInfo(posY, posX) = firstPaymentMonth
+    posX = posX + 1: ProjectInfo(posY, posX) = middlePaymentMonth
+    posX = posX + 1: ProjectInfo(posY, posX) = finalPaymentMonth
 
     For I = 1 To MAX_ACT
         Dim strAct As String, strNum As String
@@ -485,7 +484,7 @@ Public Sub PrintInfo()
 
         posX = 1: posY = posY + 1: ProjectInfo(posY, posX) = strAct
         posX = posX + 1: ProjectInfo(posY, posX) = activities(I).duration
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).StartDate
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).startDate
         posX = posX + 1: ProjectInfo(posY, posX) = activities(I).EndDate
         posX = posX + 1: ProjectInfo(posY, posX) = activities(I).HighSkill
         posX = posX + 1: ProjectInfo(posY, posX) = activities(I).MidSkill
@@ -501,6 +500,7 @@ Public Sub PrintInfo()
         RNG1.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
     End With
 End Sub
+
 
 
 

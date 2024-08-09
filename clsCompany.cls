@@ -11,32 +11,31 @@ Attribute VB_GlobalNameSpace = False
 Attribute VB_Creatable = False
 Attribute VB_PredeclaredId = False
 Attribute VB_Exposed = False
-
 Option Explicit
 Option Base 1
 
-Private comDoingTable()     As Integer  ' 진행중인 프로젝트들의 ID를 관리하는 테이블
-Private comDoneTable()      As Integer  ' 완료된 프로젝트들의 ID를 관리하는 테이블
-Private comDefferTable()    As Integer  ' 보류된 프로젝트들의 ID를 관리하는 테이블
+Private DoingTable()     As Integer  ' 진행중인 프로젝트들의 ID를 관리하는 테이블
+Private DoneTable()      As Integer  ' 완료된 프로젝트들의 ID를 관리하는 테이블
+Private DefferTable()    As Integer  ' 보류된 프로젝트들의 ID를 관리하는 테이블
 
-Private comCandidateTable() As Integer  ' 후보　프로젝트들의 ID를 관리하는 테이블
+Private CandidateTable() As Integer  ' 후보　프로젝트들의 ID를 관리하는 테이블
 
-Public comDoingTableSize    As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
-Public comDoneTableSize     As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
-Public comDefferTableSize   As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public DoingTableSize    As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public DoneTableSize     As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public DefferTableSize   As Integer      ' comDoneTable의 현재크기 song ==> 동적으로 수정하자.
 
-Private comProjectTable()   As clsProject
+Private ProjectTable()   As clsProject
 
 Private tempHRTable()       As Integer
-Private comDoingHR_HTable()  As Integer  ' 진행중인 프로젝트에 투입된 상급자
-Private comDoingHR_MTable()  As Integer  ' 진행중인 프로젝트에 투입된 중급자
-Private comDoingHR_LTable()  As Integer  ' 진행중인 프로젝트에 투입된 초급자
+Private DoingHR_HTable()  As Integer  ' 진행중인 프로젝트에 투입된 상급자
+Private DoingHR_MTable()  As Integer  ' 진행중인 프로젝트에 투입된 중급자
+Private DoingHR_LTable()  As Integer  ' 진행중인 프로젝트에 투입된 초급자
 
-Private comTotalHR_HTable()  As Integer  ' 회사가 보유한 상급자
+Private TotalHR_HTable()  As Integer  ' 회사가 보유한 상급자
 Private comTotalHR_MTable()  As Integer  ' 회사가 보유한 중급자
 Private comTotalHR_LTable()  As Integer  ' 회사가 보유한 초급자
  
-Public comID As Integer ' 회사 이름
+Public CompanyID As Integer ' 회사 이름
 
 
 Private Const MAX_CANDIDATES As Integer = 50 ' SONG 임의로 지정. 동적으로 변하게 할 필요까지는 없어 보임.
@@ -46,27 +45,27 @@ Private Const MAX_CANDIDATES As Integer = 50 ' SONG 임의로 지정. 동적으로 변하게
 ' End Property
 
 Public Property Get PropertyDoingTable() As Integer()
-    PropertyDoingTable = comDoingTable
+    PropertyDoingTable = DoingTable
 End Property
 
 Public Property Let PropertyDoingTable(value() As Integer)
-    comDoingTable = value
+    DoingTable = value
 End Property
 
 Public Property Get PropertyDoneTable() As Integer()
-    PropertyDoneTable = comDoneTable
+    PropertyDoneTable = DoneTable
 End Property
 
 Public Property Let PropertyDoneTable(value() As Integer)
-    comDoneTable = value
+    DoneTable = value
 End Property
 
 Public Property Get PropertyDefferTable() As Integer()
-    PropertyDefferTable = comDefferTable
+    PropertyDefferTable = DefferTable
 End Property
 
 Public Property Let PropertyDefferTable(value() As Integer)
-    comDefferTable = value
+    DefferTable = value
 End Property
 
 
@@ -82,16 +81,16 @@ End Sub
 ' 프로젝트, 인력, 자금을 관리할 테이블 생성
 Public Sub Init(Id As Integer)
 
-    comID = Id
-    comProjectTable = gProjectTable
+    CompanyID = Id
+    ProjectTable = gProjectTable
     
-    comDoingTableSize = 10
-    comDoneTableSize = 10
-    comDefferTableSize = 10
+    DoingTableSize = 10
+    DoneTableSize = 10
+    DefferTableSize = 10
 
-    ReDim comDoingTable(1 To comDoingTableSize, 1 To GlobalEnv.SimulationWeeks)     ' 진행중인 프로젝트들의 ID를 관리하는 테이블
-    ReDim comDoneTable(1 To comDoneTableSize, 1 To GlobalEnv.SimulationWeeks)       ' 완료된 프로젝트들의 ID를 관리하는 테이블
-    ReDim comDefferTable(1 To comDefferTableSize, 1 To GlobalEnv.SimulationWeeks)   ' 보류된 프로젝트들의 ID를 관리하는 테이블
+    ReDim comDoingTable(1 To DoingTableSize, 1 To GlobalEnv.SimulationWeeks)     ' 진행중인 프로젝트들의 ID를 관리하는 테이블
+    ReDim comDoneTable(1 To DoneTableSize, 1 To GlobalEnv.SimulationWeeks)       ' 완료된 프로젝트들의 ID를 관리하는 테이블
+    ReDim comDefferTable(1 To DefferTableSize, 1 To GlobalEnv.SimulationWeeks)   ' 보류된 프로젝트들의 ID를 관리하는 테이블
     
     ReDim comCandidateTable(1 To MAX_CANDIDATES) ' 후보 프로젝트들의 ID를 관리하는 테이블
 
@@ -113,7 +112,7 @@ End Sub
 
 Private Sub Class_Terminate()
     ' 종료할때 버퍼의 크기를 확인해서 가까운 값으로 초기값을 결정하자.
-    Debug.Print "Class is being terminated"; comDoingTableSize, comDoneTableSize, comDefferTableSize
+    Debug.Print "Class is being terminated"; DoingTableSize, DoneTableSize, DefferTableSize
 End Sub
 
 
@@ -147,17 +146,17 @@ Private Function comPrintDashboard()
     startRow = 6
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, comDoingTable)       ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, DoingTable)       ' 내용을 적는다.
 
-    startRow = startRow + comDoingTableSize + 2
+    startRow = startRow + DoingTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, comDoneTable)    ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, DoneTable)    ' 내용을 적는다.
 
-    startRow = startRow + comDoneTableSize + 2
+    startRow = startRow + DoneTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, comDefferTable)      ' 내용을 적는다.
+    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, DefferTable)      ' 내용을 적는다.
     
 End Function
 
@@ -186,7 +185,7 @@ Private Function SelectNewProject(thisWeek As Integer)
     ' song ==> 일단 모든 프로젝트를 다 하는것으로 하자. 추후 조건을 추가한다. 인원, 정책
     For Id = startProjectNum To endProjectNum
 
-        Set cProject = comProjectTable(Id)
+        Set cProject = ProjectTable(Id)
         
         If cProject.ProjectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
 
@@ -195,7 +194,7 @@ Private Function SelectNewProject(thisWeek As Integer)
             cProject.StartDate = thisWeek
             
             ' song 프로젝트 추가시 Call AddWorkProject(cProject) '프로젝트 관리 테이블들, 프로젝트와 관련된 테이블들 모두 업데이트 하는 코드로 변경예정
-            Call AddProjectEntry(comDoingTable, comDoingTableSize, cProject.StartDate, cProject.projectNum) ' Doing table에 추가
+            Call AddProjectEntry(DoingTable, DoingTableSize, cProject.StartDate, cProject.projectNum) ' Doing table에 추가
             Call AddProjectHR(thisWeek, cProject) ' 이번주부터 해당 프로젝트에 투입되는 인력정보 갱신
             
             ' 프로젝트 완료시 Call RemoveHrTable(cProject) ' HR Table에서 인력 정보를 제거한다.
@@ -232,30 +231,30 @@ Private Function CheckLastWeek(thisWeek As Integer)
         Exit Function
     End If
     
-    cnt = comDoingTable(1, thisWeek - 1) ' 지난주에 진행 중이던 프로젝트의 갯수
+    cnt = DoingTable(1, thisWeek - 1) ' 지난주에 진행 중이던 프로젝트의 갯수
     If cnt = 0 Then ' song ==> 지난주에 진행중이던 프로젝트가 없다.
         Exit Function
     End If
 
     ' 지난 기간의 정보를 이번기간에 복사하고
-    Call CopyLastToCurrent(comDoingTable, thisWeek, cnt)
+    Call CopyLastToCurrent(DoingTable, thisWeek, cnt)
 
     '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
     For I = 1 To cnt
 
-        Id = comDoingTable(I + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
+        Id = DoingTable(I + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
 
         If Id = 0 Then
             Exit For
         End If
 
-        Set cProject = comProjectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
+        Set cProject = ProjectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
         
         If cProject.ProjectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
         
             ' 프로젝트 Object 검사
             If thisWeek = (cProject.StartDate + cProject.ProjectDuration - 1) Then ' 지난번에 끝났으면
-                Call RemoveFromTable(comDoingTable, comDoingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
+                Call RemoveFromTable(DoingTable, DoingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
                 I = I - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
             End If
             
@@ -435,7 +434,7 @@ Function SelectionOfCandidates(thisWeek As Integer)
     
     '　comCandidateTable　을　＇０＇으로　초기화　한다．
     For cnt = 1 To MAX_CANDIDATES
-        comCandidateTable(cnt) = 0
+        CandidateTable(cnt) = 0
     Next
     
     cnt = gOrderTable(2, thisWeek)
@@ -449,14 +448,14 @@ Function SelectionOfCandidates(thisWeek As Integer)
     ' song ==> 일단 모든 프로젝트를 다 하는것으로 하자. 추후 조건을 추가한다. 인원, 정책
     For Id = startProjectNum To endProjectNum
 
-        Set cProject = comProjectTable(Id)
+        Set cProject = ProjectTable(Id)
         
         If cProject.ProjectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
 
         ' song ==> 프로젝트를 선택할지 말지 결정하는 루틴이 필요함. 현재는 모두 선택하는 것으로
         Else
             cProject.StartDate = thisWeek
-            Call AddProjectEntry(comDoingTable, comDoingTableSize, thisWeek, cProject.projectNum) ' Doing table에 추가
+            Call AddProjectEntry(DoingTable, DoingTableSize, thisWeek, cProject.projectNum) ' Doing table에 추가
         End If
     Next
     
@@ -489,18 +488,18 @@ Function CheckHRAvailability(ByVal thisWeek As Integer, cProject As clsProject) 
     
     ' 진행중인 프로젝트에 투입된 상급자
     For index = 1 To GlobalEnv.SimulationWeeks
-        tempHRTable(index) = comDoingHR_HTable(index)
+        tempHRTable(index) = DoingHR_HTable(index)
     Next
     
     
     ' 진행중인 프로젝트에 투입된 중급자
     For index = 1 To GlobalEnv.SimulationWeeks
-        tempHRTable(index) = comDoingHR_MTable(index)
+        tempHRTable(index) = DoingHR_MTable(index)
     Next
     
     ' 진행중인 프로젝트에 투입된 초급자
     For index = 1 To GlobalEnv.SimulationWeeks
-        tempHRTable(index) = comDoingHR_LTable(index)
+        tempHRTable(index) = DoingHR_LTable(index)
     Next
     
 
@@ -569,14 +568,14 @@ Function AddProjectHR(thisWeek As Integer, cProject As clsProject)
             ' activity의 필요한 인력을 테이블에 추가한다.
             Dim tempCnt As Integer
             
-            tempCnt = comDoingHR_HTable(thisWeek) + activity.HighSkill
-            comDoingHR_HTable(thisWeek) = tempCnt
+            tempCnt = DoingHR_HTable(thisWeek) + activity.HighSkill
+            DoingHR_HTable(thisWeek) = tempCnt
             
-            tempCnt = comDoingHR_MTable(thisWeek) + activity.MidSkill
-            comDoingHR_MTable(thisWeek) = tempCnt
+            tempCnt = DoingHR_MTable(thisWeek) + activity.MidSkill
+            DoingHR_MTable(thisWeek) = tempCnt
             
-            tempCnt = comDoingHR_LTable(thisWeek) + activity.LowSkill
-            comDoingHR_LTable(thisWeek) = tempCnt
+            tempCnt = DoingHR_LTable(thisWeek) + activity.LowSkill
+            DoingHR_LTable(thisWeek) = tempCnt
             
         Next
         
@@ -605,5 +604,6 @@ Private Function GetProjectActivity(cProject As clsProject, index As Integer) As
     ' 완성된 Activity 구조체를 반환
     GetProjectActivity = activity
 End Function
+
 
 

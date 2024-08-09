@@ -590,13 +590,13 @@ Private Function PrintSimulationResults(Company As clsCompany)
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)      ' 내용을 적는다.
 
-    startRow = startRow + Company.comDoingTableSize + 2
+    startRow = startRow + Company.DoingTableSize + 2
     tempArray = Company.PropertyDoneTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)       ' 내용을 적는다.
 
-    startRow = startRow + Company.comDoneTableSize + 2
+    startRow = startRow + Company.DoneTableSize + 2
     tempArray = Company.PropertyDefferTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
@@ -677,3 +677,4 @@ End Function
 Private Sub ScreenUpdating_Click()
 xlApp.ScreenUpdating = True
 End Sub
+
