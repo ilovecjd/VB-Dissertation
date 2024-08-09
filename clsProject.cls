@@ -14,9 +14,6 @@ Attribute VB_Exposed = False
 Option Explicit
 Option Base 1
 
-' 출력에 필요한 환경 변수들
-Private ProjectInfo()       As Variant ' 출력할 헤더를 기록하는 배열
-
 
 ' 프로젝트 속성
 Public projectType As Integer ' 프로젝트 타입 (0: 외부 / 1: 내부)
@@ -144,7 +141,8 @@ Public Sub SetPrjcashFlows(value() As Integer)
 End Sub
 
 Private Sub Class_Initialize()
-    ReDim ProjectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
+    'ReDim projectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
+       
     ReDim cashFlows(1 To MAX_N_CF)
     ReDim activities(1 To MAX_ACT)
 End Sub
@@ -452,52 +450,61 @@ Public Sub PrintInfo()
     Dim posX As Integer
     Dim posY As Integer
 
-    posX = 1: posY = 1: ProjectInfo(posY, posX) = projectType
-    posX = posX + 1: ProjectInfo(posY, posX) = projectNum
-    posX = posX + 1: ProjectInfo(posY, posX) = orderDate
-    posX = posX + 1: ProjectInfo(posY, posX) = possiblestartDate
-    posX = posX + 1: ProjectInfo(posY, posX) = projectDuration
-    posX = posX + 1: ProjectInfo(posY, posX) = startDate
-    posX = posX + 1: ProjectInfo(posY, posX) = profit
-    posX = posX + 1: ProjectInfo(posY, posX) = experience
-    posX = posX + 1: ProjectInfo(posY, posX) = successProbability
-    posX = posX + 1: ProjectInfo(posY, posX) = numCashFlows
+    Dim projectInfo() As Variant
+    ReDim projectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
+    
+    posX = 1: posY = 1: projectInfo(posY, posX) = projectType
+    posX = posX + 1: projectInfo(posY, posX) = projectNum
+    posX = posX + 1: projectInfo(posY, posX) = orderDate
+    posX = posX + 1: projectInfo(posY, posX) = possiblestartDate
+    posX = posX + 1: projectInfo(posY, posX) = projectDuration
+    posX = posX + 1: projectInfo(posY, posX) = startDate
+    posX = posX + 1: projectInfo(posY, posX) = profit
+    posX = posX + 1: projectInfo(posY, posX) = experience
+    posX = posX + 1: projectInfo(posY, posX) = successProbability
+    posX = posX + 1: projectInfo(posY, posX) = numCashFlows
 
     For i = 1 To MAX_N_CF
-        posX = posX + 1: ProjectInfo(posY, posX) = cashFlows(i)
+        posX = posX + 1: projectInfo(posY, posX) = cashFlows(i)
     Next i
 
-    posX = posX + 1: ProjectInfo(posY, posX) = firstPayment
-    posX = posX + 1: ProjectInfo(posY, posX) = middlePayment
-    posX = posX + 1: ProjectInfo(posY, posX) = finalPayment
+    posX = posX + 1: projectInfo(posY, posX) = firstPayment
+    posX = posX + 1: projectInfo(posY, posX) = middlePayment
+    posX = posX + 1: projectInfo(posY, posX) = finalPayment
 
-    posX = 1: posY = 2: ProjectInfo(posY, posX) = "ActivityCnt"
-    posX = posX + 1: ProjectInfo(posY, posX) = numActivities
-    posX = posX + 9: ProjectInfo(posY, posX) = firstPaymentMonth
-    posX = posX + 1: ProjectInfo(posY, posX) = middlePaymentMonth
-    posX = posX + 1: ProjectInfo(posY, posX) = finalPaymentMonth
+    posX = 1: posY = 2: projectInfo(posY, posX) = "ActivityCnt"
+    posX = posX + 1: projectInfo(posY, posX) = numActivities
+    posX = posX + 9: projectInfo(posY, posX) = firstPaymentMonth
+    posX = posX + 1: projectInfo(posY, posX) = middlePaymentMonth
+    posX = posX + 1: projectInfo(posY, posX) = finalPaymentMonth
 
     For i = 1 To MAX_ACT
         Dim strAct As String, strNum As String
         strNum = Format(i, "#0")
         strAct = "Activity" & strNum
 
-        posX = 1: posY = posY + 1: ProjectInfo(posY, posX) = strAct
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).duration
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).startDate
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).EndDate
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).HighSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).MidSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = activities(i).LowSkill
+        posX = 1: posY = posY + 1: projectInfo(posY, posX) = strAct
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).duration
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).startDate
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).EndDate
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).HighSkill
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).MidSkill
+        posX = posX + 1: projectInfo(posY, posX) = activities(i).LowSkill
     Next i
 
     posY = (projectNum - 1) * PRJ_SHEET_HEADER_H + 4
 
     With gWsProject
+    
         Dim RNG1 As Object
         Set RNG1 = .Range(.Cells(posY, 1), .Cells(posY + PRJ_SHEET_HEADER_H - 1, PRJ_SHEET_HEADER_W))
-        RNG1.value = ProjectInfo
+        
+        RNG1.UnMerge
+        RNG1.Clear
+        RNG1.ClearContents
+        RNG1.value = projectInfo
         RNG1.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
+        
     End With
 End Sub
 
