@@ -549,7 +549,7 @@ Private Sub Run_Click()
     Next
     
     Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
-    Call PrintSimulationResults(Company)
+    Call Company.PrintSimulationResults
     
 End Sub
 
@@ -569,44 +569,6 @@ Function ClearTableArea(ws As Worksheet, startRow As Long)
 
 End Function
 
-
-Private Function PrintSimulationResults(Company As clsCompany)
-    
-    'Call ClearSheet(gWsDashboard)          '시트의 모든 내용을 지우고 셀 병합 해제
-
-    Dim startRow    As Long
-    Dim arrHeader   As Variant
-    Dim tempArray() As Integer
-        
-    arrHeader = Array("주", "누계", "prjNum")
-    arrHeader = PivotArray(arrHeader)
-    
-    startRow = DONG_TABLE_INDEX
-    
-    'song 제목을 적자
-    
-    tempArray = Company.PropertyDoingTable
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)      ' 내용을 적는다.
-
-    startRow = startRow + Company.DoingTableSize + 2
-    tempArray = Company.PropertyDoneTable
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)       ' 내용을 적는다.
-
-    startRow = startRow + Company.DoneTableSize + 2
-    tempArray = Company.PropertyDefferTable
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, tempArray)     ' 내용을 적는다.
-
-
-    Exit Function
-
-    
-End Function
 
 ' data.xlsm 파일의 parameters, dashboard 시트의 유효성 체크
 Private Function CheckDataFile() As Boolean
