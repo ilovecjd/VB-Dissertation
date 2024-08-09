@@ -21,7 +21,7 @@ Private ProjectInfo()       As Variant ' 출력할 헤더를 기록하는 배열
 
 ' 프로젝트 속성
 Public ProjectType As Integer ' 프로젝트 타입 (0: 외부 / 1: 내부)
-Public ProjectNum As Integer ' 프로젝트의 번호
+Public projectNum As Integer ' 프로젝트의 번호
 
 Public OrderDate As Integer ' 발주일
 Public PossibleStartDate As Integer ' 시작 가능일
@@ -43,10 +43,90 @@ Public FinalPaymentMonth As Integer ' 3차 지급일`
 
 ' 활동
 Public NumActivities As Integer ' 총 활동 수
-Private Activities() As Activity ' 활동에 관한 정보를 기록하는 배열
+Private activities() As Activity_  ' 활동에 관한 정보를 기록하는 배열
 Private PrjAttribute() As Variant ' activity_struct 시트에서 프로젝트 속성을 읽어올 배열
 Private PatAttribute() As Variant ' activity_struct 시트에서 패턴 속성을 읽어올 배열
+'
+'Public Function GetActivity(actNum As Integer) As Variant
+'    ' song 예외처리 코드 필요 (갯수 넘지 않게)
+'    GetActivity = activities(actNum)
+'End Function
 
+
+
+' 활동의 ActivityType 반환하는 함수
+
+Public Function GetActivityActivityType(index As Integer) As Integer
+    GetActivityActivityType = activities(index).ActivityType
+End Function
+
+' 활동의 Duration을 반환하는 함수
+Public Function GetActivityDuration(index As Integer) As Integer
+    GetActivityDuration = activities(index).duration
+End Function
+
+' 활동의 StartDate를 반환하는 함수
+Public Function GetActivityStartDate(index As Integer) As Integer
+    GetActivityStartDate = activities(index).StartDate
+End Function
+
+' 활동의 EndDate를 반환하는 함수
+Public Function GetActivityEndDate(index As Integer) As Integer
+    GetActivityEndDate = activities(index).EndDate
+End Function
+
+' 활동의 HighSkill을 반환하는 함수
+Public Function GetActivityHighSkill(index As Integer) As Integer
+    GetActivityHighSkill = activities(index).HighSkill
+End Function
+
+' 활동의 MidSkill을 반환하는 함수
+Public Function GetActivityMidSkill(index As Integer) As Integer
+    GetActivityMidSkill = activities(index).MidSkill
+End Function
+
+' 활동의 LowSkill을 반환하는 함수
+Public Function GetActivityLowSkill(index As Integer) As Integer
+    GetActivityLowSkill = activities(index).LowSkill
+End Function
+
+
+' clsProject.cls
+
+' 활동의 ActivityType 설정
+Public Sub SetActivityActivityType(index As Integer, value As Integer)
+    activities(index).ActivityType = value
+End Sub
+ 
+' 활동의 Duration 설정
+Public Sub SetActivityDuration(index As Integer, value As Integer)
+    activities(index).duration = value
+End Sub
+
+' 활동의 StartDate 설정
+Public Sub SetActivityStartDate(index As Integer, value As Integer)
+    activities(index).StartDate = value
+End Sub
+
+' 활동의 EndDate 설정
+Public Sub SetActivityEndDate(index As Integer, value As Integer)
+    activities(index).EndDate = value
+End Sub
+
+' 활동의 HighSkill 설정
+Public Sub SetActivityHighSkill(index As Integer, value As Integer)
+    activities(index).HighSkill = value
+End Sub
+
+' 활동의 MidSkill 설정
+Public Sub SetActivityMidSkill(index As Integer, value As Integer)
+    activities(index).MidSkill = value
+End Sub
+
+' 활동의 LowSkill 설정
+Public Sub SetActivityLowSkill(index As Integer, value As Integer)
+    activities(index).LowSkill = value
+End Sub
 
 Public Property Get PrjCashFlows() As Integer()
     PrjCashFlows = CashFlows
@@ -65,10 +145,9 @@ Public Sub SetPrjCashFlows(value() As Integer)
 End Sub
 
 Private Sub Class_Initialize()
-    
     ReDim ProjectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
     ReDim CashFlows(1 To MAX_N_CF)
-    ReDim Activities(1 To MAX_ACT)
+    ReDim activities(1 To MAX_ACT)
 End Sub
 
 ' Desc     : Project 클래스의 초기화
@@ -79,7 +158,7 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
 
     ' 전달받은 값들로 초기화
     ProjectType = initType
-    ProjectNum = initNum
+    projectNum = initNum
 
     ' 프로젝트 생성을 위해 필요한 값들을 생성한다.
     OrderDate = ODate ' 발주일
@@ -115,7 +194,7 @@ Public Sub CreateActivities()
 
     Dim prjType As Integer
     Dim patternType As Integer
-    Dim i As Integer
+    Dim I As Integer
     Dim probability As Integer
     Dim Lb As Integer
     Dim UB As Integer
@@ -130,16 +209,16 @@ Public Sub CreateActivities()
     probability = Int(Rnd() * 100)
     maxLoop = MAX_PRJ_TYPE
 
-    For i = 1 To maxLoop
-        UB = UB + PrjAttribute(i, 1)
+    For I = 1 To maxLoop
+        UB = UB + PrjAttribute(I, 1)
 
         If Lb <= probability And probability < UB Then
-            prjType = i
+            prjType = I
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next I
 
     Lb = PrjAttribute(prjType, 4)
     UB = PrjAttribute(prjType, 5)
@@ -150,25 +229,25 @@ Public Sub CreateActivities()
     UB = 0
     maxLoop = PrjAttribute(prjType, 6)
 
-    For i = 1 To maxLoop
-        UB = UB + PrjAttribute(prjType, 8 + ((i - 1) * 2))
+    For I = 1 To maxLoop
+        UB = UB + PrjAttribute(prjType, 8 + ((I - 1) * 2))
 
         If Lb <= probability And probability < UB Then
-            patternType = PrjAttribute(prjType, 7 + (i - 1) * 2)
+            patternType = PrjAttribute(prjType, 7 + (I - 1) * 2)
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next I
 
     Lb = 0
     UB = 0
     maxLoop = PatAttribute(patternType, 2)
     NumActivities = maxLoop
 
-    For i = 1 To maxLoop
-        Lb = Lb + PatAttribute(patternType, 3 + (i - 1) * 5)
-        UB = UB + PatAttribute(patternType, 4 + (i - 1) * 5)
+    For I = 1 To maxLoop
+        Lb = Lb + PatAttribute(patternType, 3 + (I - 1) * 5)
+        UB = UB + PatAttribute(patternType, 4 + (I - 1) * 5)
         probability = RandomBetween(Lb, UB)
         tempDuration = totalDuration * probability / 100
 
@@ -176,24 +255,24 @@ Public Sub CreateActivities()
             tempDuration = 1
         End If
 
-        If i = 1 Then
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = 1
-            Activities(i).EndDate = tempDuration
-        ElseIf i = 2 Then
-            Activities(i).Duration = totalDuration - Activities(1).Duration
-            Activities(i).StartDate = Activities(1).EndDate + 1
-            Activities(i).EndDate = totalDuration
-        ElseIf i = 3 Then
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = totalDuration - tempDuration
-            Activities(i).EndDate = totalDuration
+        If I = 1 Then
+            activities(I).duration = tempDuration
+            activities(I).StartDate = 1
+            activities(I).EndDate = tempDuration
+        ElseIf I = 2 Then
+            activities(I).duration = totalDuration - activities(1).duration
+            activities(I).StartDate = activities(1).EndDate + 1
+            activities(I).EndDate = totalDuration
+        ElseIf I = 3 Then
+            activities(I).duration = tempDuration
+            activities(I).StartDate = totalDuration - tempDuration
+            activities(I).EndDate = totalDuration
         Else
-            Activities(i).Duration = tempDuration
-            Activities(i).StartDate = Activities(3).StartDate - tempDuration - 1
-            Activities(i).EndDate = Activities(3).StartDate - 1
+            activities(I).duration = tempDuration
+            activities(I).StartDate = activities(3).StartDate - tempDuration - 1
+            activities(I).EndDate = activities(3).StartDate - 1
         End If
-    Next i
+    Next I
 End Sub
 
 Public Function RandomBetween(minValue As Integer, maxValue As Integer) As Integer
@@ -210,27 +289,27 @@ End Function
 
 ' 활동별 투입 인력 생성, 프로젝트 전체 기대 수익 생성 및 기록
 Public Sub CalculateHRandProfit()
-    Dim i As Integer
+    Dim I As Integer
     Dim j As Integer
     Dim high As Integer, mid As Integer, low As Integer
     high = 0: mid = 0: low = 0
 
-    For i = 1 To NumActivities
+    For I = 1 To NumActivities
         j = Int(Rnd() * 100)
         If (0 < j) And (j <= RND_HR_H) Then
-            Activities(i).HighSkill = 1
+            activities(I).HighSkill = 1
         ElseIf (RND_HR_H < j) And (j <= RND_HR_M) Then
-            Activities(i).MidSkill = 1
+            activities(I).MidSkill = 1
         Else
-            Activities(i).LowSkill = 1
+            activities(I).LowSkill = 1
         End If
-    Next i
+    Next I
 
-    For i = 1 To NumActivities
-        high = high + Activities(i).HighSkill * Activities(i).Duration
-        mid = mid + Activities(i).MidSkill * Activities(i).Duration
-        low = low + Activities(i).LowSkill * Activities(i).Duration
-    Next i
+    For I = 1 To NumActivities
+        high = high + activities(I).HighSkill * activities(I).duration
+        mid = mid + activities(I).MidSkill * activities(I).duration
+        low = low + activities(I).LowSkill * activities(I).duration
+    Next I
 
     Profit = CalculateTotalLaborCost(high, mid, low)
 End Sub
@@ -370,12 +449,12 @@ End Function
 
 ' 프로젝트의 모든 정보를 엑셀에 출력한다.
 Public Sub PrintInfo()
-    Dim i As Integer
+    Dim I As Integer
     Dim posX As Integer
     Dim posY As Integer
 
     posX = 1: posY = 1: ProjectInfo(posY, posX) = ProjectType
-    posX = posX + 1: ProjectInfo(posY, posX) = ProjectNum
+    posX = posX + 1: ProjectInfo(posY, posX) = projectNum
     posX = posX + 1: ProjectInfo(posY, posX) = OrderDate
     posX = posX + 1: ProjectInfo(posY, posX) = PossibleStartDate
     posX = posX + 1: ProjectInfo(posY, posX) = ProjectDuration
@@ -385,9 +464,9 @@ Public Sub PrintInfo()
     posX = posX + 1: ProjectInfo(posY, posX) = SuccessProbability
     posX = posX + 1: ProjectInfo(posY, posX) = NumCashFlows
 
-    For i = 1 To MAX_N_CF
-        posX = posX + 1: ProjectInfo(posY, posX) = CashFlows(i)
-    Next i
+    For I = 1 To MAX_N_CF
+        posX = posX + 1: ProjectInfo(posY, posX) = CashFlows(I)
+    Next I
 
     posX = posX + 1: ProjectInfo(posY, posX) = FirstPayment
     posX = posX + 1: ProjectInfo(posY, posX) = MiddlePayment
@@ -399,21 +478,21 @@ Public Sub PrintInfo()
     posX = posX + 1: ProjectInfo(posY, posX) = MiddlePaymentMonth
     posX = posX + 1: ProjectInfo(posY, posX) = FinalPaymentMonth
 
-    For i = 1 To MAX_ACT
+    For I = 1 To MAX_ACT
         Dim strAct As String, strNum As String
-        strNum = Format(i, "#0")
+        strNum = Format(I, "#0")
         strAct = "Activity" & strNum
 
         posX = 1: posY = posY + 1: ProjectInfo(posY, posX) = strAct
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).Duration
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).StartDate
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).EndDate
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).HighSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).MidSkill
-        posX = posX + 1: ProjectInfo(posY, posX) = Activities(i).LowSkill
-    Next i
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).duration
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).StartDate
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).EndDate
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).HighSkill
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).MidSkill
+        posX = posX + 1: ProjectInfo(posY, posX) = activities(I).LowSkill
+    Next I
 
-    posY = (ProjectNum - 1) * PRJ_SHEET_HEADER_H + 4
+    posY = (projectNum - 1) * PRJ_SHEET_HEADER_H + 4
 
     With gWsProject
         Dim RNG1 As Object
@@ -422,4 +501,7 @@ Public Sub PrintInfo()
         RNG1.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
     End With
 End Sub
+
+
+
 

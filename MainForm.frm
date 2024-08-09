@@ -238,7 +238,7 @@ End Enum
 Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
-    Dim index   As Integer ' song 대문자로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라...
+    Dim index   As Integer ' song i가 대문자 I로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라... i 대신 모두 index로 통일
 
     ' 입력값들을 업데이트 한다.
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
@@ -372,6 +372,7 @@ End Sub
 
 
 ' data.xlsm 파일의 시트 객체들을 설정
+' song 다른 엑셀이 열려 있었으면 xlApp 는 닫지 않는 것으로 코드 수정 필요
 Public Sub ModifyExcel()
     
     Dim filePath As String
@@ -386,9 +387,10 @@ Public Sub ModifyExcel()
     If xlApp Is Nothing Then
         ' 엑셀 애플리케이션 객체 초기화
         Set xlApp = CreateObject("Excel.Application")
-        xlApp.Visible = True
-        xlApp.ScreenUpdating = True
     End If
+    
+    xlApp.Visible = True
+    xlApp.ScreenUpdating = True
     
     ' 워크북 열기 또는 이미 열려 있는 워크북 참조
     On Error Resume Next
@@ -514,14 +516,18 @@ Private Sub CleanUpExcel()
         
 End Sub
 
+
+
+
 Private Sub Option_Create_Click()
     gProjectLoadOrCreate = LoadOrCreate.Create
-
 End Sub
+
 
 Private Sub Option_Load_Click()
     gProjectLoadOrCreate = LoadOrCreate.Load
 End Sub
+
 
 ' 시뮬레이션을 시작한다.
 Private Sub Run_Click()
@@ -576,6 +582,9 @@ Private Function PrintSimulationResults(Company As clsCompany)
     arrHeader = PivotArray(arrHeader)
     
     startRow = DONG_TABLE_INDEX
+    
+    'song 제목을 적자
+    
     tempArray = Company.PropertyDoingTable
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고

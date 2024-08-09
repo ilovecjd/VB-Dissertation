@@ -35,18 +35,20 @@ Public Const RND_PRJ_TYPE3 As Integer = 20
 Public Const RND_PRJ_TYPE4 As Integer = 70
 Public Const RND_PRJ_TYPE5 As Integer = 20
 Public Const ORDER_TABLE_INDEX As Long = 1
-Public Const DONG_TABLE_INDEX = 6
+Public Const DONG_TABLE_INDEX = 21
 Public Const PROJECT_TABLE_INDEX As Long = 3
 
-Private gExcelInitialized As Boolean
-Private gTableInitialized As Boolean
-Public gTotalProjectNum As Integer
-Public GlobalEnv As Environment
-Public gOrderTable() As Variant
-Public gProjectTable() As clsProject
-Public gPrintDurationTable() As Variant
 
-Type Environment
+Private gExcelInitialized As Boolean ' 전역변수일 필요 없음
+Private gTableInitialized As Boolean ' 전역변수일 필요 없음
+
+Public gTotalProjectNum As Integer
+Public GlobalEnv As Environment_
+Public gOrderTable() As Variant 'GlobalEnv 에 포함 여부 체크 필요
+Public gProjectTable() As clsProject ' 필요한가??
+Public gPrintDurationTable() As Variant ' 매번 생성해도 시간차이 없을듯..
+
+Public Type Environment_
     SimulationWeeks As Integer
     WeeklyProb As Double
     Hr_Init_H As Integer
@@ -57,9 +59,9 @@ Type Environment
     ProblemCnt As Integer
 End Type
 
-Type Activity
+Public Type Activity_
     ActivityType As Integer
-    Duration As Integer
+    duration As Integer
     StartDate As Integer
     EndDate As Integer
     HighSkill As Integer
@@ -67,7 +69,7 @@ Type Activity
     LowSkill As Integer
 End Type
 
-Public Property Get GetExcelEnv() As Environment
+Public Property Get GetExcelEnv() As Environment_
     GetExcelEnv = GlobalEnv
 End Property
 
@@ -102,14 +104,14 @@ End Property
 ' 전역적으로 사용하는 테이블들을 채운다.
 Sub Prologue(TableInit As Integer)
 
-    Dim i As Integer
+    Dim I As Integer
     
     If gExcelInitialized = False Then
 
         ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-        For i = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(i) = i
-        Next i
+        For I = 1 To GlobalEnv.SimulationWeeks
+            gPrintDurationTable(I) = I
+        Next I
 
         gExcelInitialized = True
     End If
@@ -177,7 +179,7 @@ Private Function LoadProjects() As Boolean
         End With
 
         tempPrj.ProjectType = prjInfo(1, 1)
-        tempPrj.ProjectNum = prjInfo(1, 2)
+        tempPrj.projectNum = prjInfo(1, 2)
         tempPrj.OrderDate = prjInfo(1, 3)
         tempPrj.PossibleStartDate = prjInfo(1, 4)
         tempPrj.ProjectDuration = prjInfo(1, 5)
@@ -187,10 +189,10 @@ Private Function LoadProjects() As Boolean
         tempPrj.SuccessProbability = prjInfo(1, 9)
         
         Dim tempCF(1 To MAX_N_CF) As Integer
-        Dim i As Integer
-        For i = 1 To MAX_N_CF
-            tempCF(i) = prjInfo(1, 10 + i)
-        Next i
+        Dim index As Integer
+        For index = 1 To MAX_N_CF
+            tempCF(index) = prjInfo(1, 10 + index)
+        Next index
         tempPrj.SetPrjCashFlows tempCF
 
         tempPrj.FirstPayment = prjInfo(1, 14)
@@ -202,17 +204,20 @@ Private Function LoadProjects() As Boolean
         tempPrj.MiddlePaymentMonth = prjInfo(2, 12)
         tempPrj.FinalPaymentMonth = prjInfo(2, 13)
         
-        Dim tempAct As Activity
-        For i = 1 To tempPrj.NumActivities
-            tempAct.Duration = prjInfo(2 + i, 2)
-            tempAct.StartDate = prjInfo(2 + i, 3)
-            tempAct.EndDate = prjInfo(2 + i, 4)
-            tempAct.HighSkill = prjInfo(2 + i, 5)
-            tempAct.MidSkill = prjInfo(2 + i, 6)
-            tempAct.LowSkill = prjInfo(2 + i, 7)
-            'tempPrj.SetPrjActivities i, tempAct
-        Next i
+        
+        Dim tempAct As Activity_
+        
+        For index = 1 To tempPrj.NumActivities
+            tempAct.duration = prjInfo(2 + index, 2)
+            tempAct.StartDate = prjInfo(2 + index, 3)
+            tempAct.EndDate = prjInfo(2 + index, 4)
+            tempAct.HighSkill = prjInfo(2 + index, 5)
+            tempAct.MidSkill = prjInfo(2 + index, 6)
+            tempAct.LowSkill = prjInfo(2 + index, 7)
+            Call SetProjectActivity(tempPrj, index, tempAct)
+        Next index
 
+        
         Set gProjectTable(prjID) = tempPrj
         
     Next prjID
@@ -314,7 +319,7 @@ Public Function GetVariableValue(rng As Object, variableName As String) As Varia
     Dim matchIndex As Variant
 
     dataArray = rng.value
-    matchIndex = Application.Match(variableName, Application.Index(dataArray, 0, 1), 0)
+    matchIndex = Application.Match(variableName, Application.index(dataArray, 0, 1), 0)
     
     If Not IsError(matchIndex) Then
         GetVariableValue = dataArray(matchIndex, 2)
@@ -396,26 +401,26 @@ End Function
 
 Function PrintProjectAll()
     Dim temp As clsProject
-    Dim i As Integer
+    Dim I As Integer
 
-    For i = 1 To gTotalProjectNum
-        Set temp = gProjectTable(i)
+    For I = 1 To gTotalProjectNum
+        Set temp = gProjectTable(I)
         Call temp.PrintInfo
-    Next i
+    Next I
 End Function
 
 Function ConvertToBase1(arr As Variant) As Variant
-    Dim i As Integer
+    Dim I As Integer
     Dim newArr() As Variant
     ReDim newArr(1 To UBound(arr) - LBound(arr) + 1)
-    For i = LBound(arr) To UBound(arr)
-        newArr(i - LBound(arr) + 1) = arr(i)
-    Next i
+    For I = LBound(arr) To UBound(arr)
+        newArr(I - LBound(arr) + 1) = arr(I)
+    Next I
     ConvertToBase1 = newArr
 End Function
 
 Function PivotArray(arr As Variant) As Variant
-    Dim i As Integer
+    Dim I As Integer
     Dim rowCount As Integer
     Dim result() As Variant
     
@@ -426,9 +431,9 @@ Function PivotArray(arr As Variant) As Variant
     ReDim result(1 To rowCount, 1 To 1)
     
     ' 1차원 배열을 2차원 배열로 변환
-    For i = LBound(arr) To UBound(arr)
-        result(i, 1) = arr(i)
-    Next i
+    For I = LBound(arr) To UBound(arr)
+        result(I, 1) = arr(I)
+    Next I
     
     PivotArray = result
 End Function
@@ -488,18 +493,18 @@ End Function
 
 Function FindRowWithKeyword(ws As Object, keyword As String) As Long
     Dim lastRow As Long
-    Dim i As Long
+    Dim I As Long
     
     ' 엑셀 워크시트의 마지막 행 구하기
     lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
 
     ' 1번 열을 순회하며 키워드 찾기
-    For i = 1 To lastRow
-        If InStr(1, ws.Cells(i, 1).value, keyword, vbTextCompare) > 0 Then
-            FindRowWithKeyword = i
+    For I = 1 To lastRow
+        If InStr(1, ws.Cells(I, 1).value, keyword, vbTextCompare) > 0 Then
+            FindRowWithKeyword = I
             Exit Function
         End If
-    Next i
+    Next I
 
     ' 키워드를 찾지 못한 경우
     FindRowWithKeyword = 0
@@ -514,3 +519,19 @@ Function GetLastColumnValue(ws As Object, rowNumber As Long) As Variant
     ' 마지막 열의 값 반환
     GetLastColumnValue = ws.Cells(rowNumber, lastCol).value
 End Function
+
+
+
+Private Function SetProjectActivity(cProject As clsProject, index As Integer, activity As Activity_)
+
+    Call cProject.SetActivityDuration(index, activity.ActivityType)
+    Call cProject.SetActivityDuration(index, activity.duration)
+    Call cProject.SetActivityStartDate(index, activity.StartDate)
+    Call cProject.SetActivityEndDate(index, activity.EndDate)
+    Call cProject.SetActivityHighSkill(index, activity.HighSkill)
+    Call cProject.SetActivityMidSkill(index, activity.MidSkill)
+    Call cProject.SetActivityLowSkill(index, activity.LowSkill)
+    
+End Function
+
+
