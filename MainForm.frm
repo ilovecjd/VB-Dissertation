@@ -221,6 +221,7 @@ Const STR_RUN_LOG_FILE = "run_log.txt"
 Const STR_START_EXCEL = "시작"
 Const STR_END_EXCEL = "종료"
 
+' data.xlsm 파일에서 Project를 로드 할지, 새로 생성할지 표시하는 플래그값
 Enum LoadOrCreate
         Load
         Create
@@ -310,7 +311,7 @@ Private Sub Form_Load()
     'run_log.txt 파일이 없으면 생성 후 계속 진행, data.xlsm 파일이 없으면 경고 후 프로그램 종료,
     Call CheckFiles
     
-    ' data.xlsm 파일의 시트 객체들을 설정
+    ' data.xlsm 파일의 WorkSheet Object 들을 설정
     Call ModifyExcel
     
     ' data.xlsm 파일의 parameters와 Dashboard 시트의 내용들에 대한 유효성 체크
@@ -323,7 +324,7 @@ Private Sub Form_Load()
     gProjectLoadOrCreate = LoadOrCreate.Load
     Option_Load.value = True
 
-    ' 화면에 보이는 초기 값 설정
+    ' 화면에 보여줄 초기 값 설정
     txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
     txtWeeklyProb.Text = GlobalEnv.WeeklyProb           '1.25
     txtCash = GlobalEnv.Cash_Init                       '1000
@@ -338,7 +339,26 @@ End Sub
 
 Private Sub Form_Unload(Cancel As Integer)
     
-    Call CleanUpExcel ' 열려있는 엑섹을 종료. 변경된 내용은 저장하지 않는다.
+    Dim retCode As Integer
+    retCode = MsgBox("data.xlsm 을 저장하고 종료하려면 Yes," + vbNewLine _
+            + "저장없이 종료하려면 No" + vbNewLine _
+            + "계속 실행하려면 Cancel 을 선택 하시오", vbYesNoCancel, "프로그램 종료")
+            
+    Select Case retCode
+    
+    Case vbYes, vbNo
+    
+    Case vbCancel
+        Cancel = 1
+        Exit Sub ' 프로그램을 종료하지 않는다.
+    
+    Case Else
+        Call MsgBox("알수 없는 상태로 종료합니다." + vbNewLine + _
+                    " data.xlsm 파일은 저장되지 않습니다." + vbNewLine + _
+                    "문제를 확인하세요", vbCritical, "알수 없는 상태로 종료")
+    End Select
+        
+    Call CleanUpExcel(retCode) ' 열려있는 엑섹을 종료. 변경된 내용은 저장하지 않는다.
     Call WriteLog(STR_END_EXCEL) ' 로그파일에 종료를 표시한다.
     
 End Sub
@@ -500,13 +520,21 @@ End Sub
 
 ' 열려있는 엑섹을 종료한다.
 ' 변경된 내용은 저장하지 않는다.
-Private Sub CleanUpExcel()
+Private Sub CleanUpExcel(retCode As Integer)
 
     On Error Resume Next
     
     If Not xlWb Is Nothing Then
-        xlWb.Close SaveChanges:=False
-        Set xlWb = Nothing
+    
+        If retCode = vbYes Then
+            xlWb.Close SaveChanges:=True
+            Set xlWb = Nothing
+            
+        Else
+            xlWb.Close SaveChanges:=False
+            Set xlWb = Nothing
+        End If
+        
     End If
 
     If Not xlApp Is Nothing Then
