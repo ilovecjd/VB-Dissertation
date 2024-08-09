@@ -176,12 +176,12 @@ End Sub
 
 ' 프로젝트와 패턴을 배열에 담아 온다.
 Public Sub SetProjectEnv()
-    ReDim prjAttribute(1 To 5, 1 To 14)
-    ReDim patAttribute(1 To 6, 1 To 27)
+    ReDim activityAttribute(1 To 5, 1 To 14)
+    ReDim activityPattern(1 To 6, 1 To 27)
 
     With gWsActivity_Struct
-        prjAttribute = .Range(.Cells(3, 1), .Cells(7, 14)).value
-        patAttribute = .Range(.Cells(15, 1), .Cells(20, 27)).value
+        activityAttribute = .Range(.Cells(3, 1), .Cells(7, 14)).value
+        activityPattern = .Range(.Cells(15, 1), .Cells(20, 27)).value
     End With
 End Sub
 
@@ -193,7 +193,7 @@ Public Sub CreateActivities()
 
     Dim prjType As Integer
     Dim patternType As Integer
-    Dim i As Integer
+    Dim index As Integer
     Dim probability As Integer
     Dim Lb As Integer
     Dim UB As Integer
@@ -208,16 +208,16 @@ Public Sub CreateActivities()
     probability = Int(Rnd() * 100)
     maxLoop = MAX_PRJ_TYPE
 
-    For i = 1 To maxLoop
-        UB = UB + activityAttribute(i, 1)
+    For index = 1 To maxLoop
+        UB = UB + activityAttribute(index, 1)
 
         If Lb <= probability And probability < UB Then
-            prjType = i
+            prjType = index
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next index
 
     Lb = activityAttribute(prjType, 4)
     UB = activityAttribute(prjType, 5)
@@ -228,25 +228,25 @@ Public Sub CreateActivities()
     UB = 0
     maxLoop = activityAttribute(prjType, 6)
 
-    For i = 1 To maxLoop
-        UB = UB + activityAttribute(prjType, 8 + ((i - 1) * 2))
+    For index = 1 To maxLoop
+        UB = UB + activityAttribute(prjType, 8 + ((index - 1) * 2))
 
         If Lb <= probability And probability < UB Then
-            patternType = activityAttribute(prjType, 7 + (i - 1) * 2)
+            patternType = activityAttribute(prjType, 7 + (index - 1) * 2)
             Exit For
         End If
 
         Lb = UB
-    Next i
+    Next index
 
     Lb = 0
     UB = 0
     maxLoop = activityPattern(patternType, 2)
     numActivities = maxLoop
 
-    For i = 1 To maxLoop
-        Lb = Lb + activityPattern(patternType, 3 + (i - 1) * 5)
-        UB = UB + activityPattern(patternType, 4 + (i - 1) * 5)
+    For index = 1 To maxLoop
+        Lb = Lb + activityPattern(patternType, 3 + (index - 1) * 5)
+        UB = UB + activityPattern(patternType, 4 + (index - 1) * 5)
         probability = RandomBetween(Lb, UB)
         tempDuration = totalDuration * probability / 100
 
@@ -254,24 +254,24 @@ Public Sub CreateActivities()
             tempDuration = 1
         End If
 
-        If i = 1 Then
-            activities(i).duration = tempDuration
-            activities(i).startDate = 1
-            activities(i).EndDate = tempDuration
-        ElseIf i = 2 Then
-            activities(i).duration = totalDuration - activities(1).duration
-            activities(i).startDate = activities(1).EndDate + 1
-            activities(i).EndDate = totalDuration
-        ElseIf i = 3 Then
-            activities(i).duration = tempDuration
-            activities(i).startDate = totalDuration - tempDuration
-            activities(i).EndDate = totalDuration
+        If index = 1 Then
+            activities(index).duration = tempDuration
+            activities(index).startDate = 1
+            activities(index).EndDate = tempDuration
+        ElseIf index = 2 Then
+            activities(index).duration = totalDuration - activities(1).duration
+            activities(index).startDate = activities(1).EndDate + 1
+            activities(index).EndDate = totalDuration
+        ElseIf index = 3 Then
+            activities(index).duration = tempDuration
+            activities(index).startDate = totalDuration - tempDuration
+            activities(index).EndDate = totalDuration
         Else
-            activities(i).duration = tempDuration
-            activities(i).startDate = activities(3).startDate - tempDuration - 1
-            activities(i).EndDate = activities(3).startDate - 1
+            activities(index).duration = tempDuration
+            activities(index).startDate = activities(3).startDate - tempDuration - 1
+            activities(index).EndDate = activities(3).startDate - 1
         End If
-    Next i
+    Next index
 End Sub
 
 Public Function RandomBetween(minValue As Integer, maxValue As Integer) As Integer
