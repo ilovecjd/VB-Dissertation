@@ -239,10 +239,12 @@ End Enum
 Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
-    Dim index   As Integer ' song i가 대문자 I로 자동 변경 되는데...이유를 모르겠음. 워낙 예전 툴이라... i 대신 모두 index로 통일
+    Dim index   As Integer
 
     ' 입력값들을 업데이트 한다.
+    ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+    GlobalEnv.maxTableSize = txtSimulationWeeks.Text + 80
     GlobalEnv.WeeklyProb = txtWeeklyProb.Text
     GlobalEnv.Hr_Init_H = txtHr_H.Text
     GlobalEnv.Hr_Init_L = txtHr_M.Text
@@ -265,7 +267,7 @@ Private Sub btnGenBoardNProject_Click()
             Call LoadTablesFromExcel
         End If
         
-    '2. 프로젝트를 새롭게 생성
+    '2. 화면에 입력된 값으로 프로젝트를 새롭게 생성
     Else
         Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
         
@@ -281,14 +283,14 @@ Private Sub btnGenBoardNProject_Click()
             Next index
         
             Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
-            Call CreateProjects     ' 프로젝트를 생성한다.
+            Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
             Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
             Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
             Call PrintProjectAll    ' 프로젝트 전체를 출력한다
             
-        End If
+        End If  ' If (vbNo = Res) Then
         
-    End If
+    End If  ' If gProjectLoadOrCreate = LoadOrCreate.Load Then
         
     
 
@@ -440,8 +442,13 @@ Sub LoadEnvFromExcel()
     Dim posY As Long, posX As Long
     
     With gWsParameters
+    
     ' 시뮬레이션의 기본 환경 변수들
     posX = 2: posY = 2: GlobalEnv.SimulationWeeks = .Cells(posY, posX) '156 ' 3년(52주 * 3년)
+    
+    ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
+    GlobalEnv.maxTableSize = GlobalEnv.SimulationWeeks + 80
+    
     posY = posY + 1: GlobalEnv.WeeklyProb = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Hr_Init_H = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Hr_Init_L = .Cells(posY, posX)
@@ -449,6 +456,7 @@ Sub LoadEnvFromExcel()
     posY = posY + 1: GlobalEnv.Hr_LeadTime = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Cash_Init = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.ProblemCnt = .Cells(posY, posX)
+    
     End With
     
 End Sub
@@ -586,8 +594,8 @@ Function ClearTableArea(ws As Worksheet, startRow As Long)
     With ws
         Dim endRow As Long ' 마지막행
         Dim endCol As Long ' 마지막열
-        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
-        endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
+        endRow = .UsedRange.Rows.count + .UsedRange.Row - 1
+        endCol = .UsedRange.Columns.count + .UsedRange.Column - 1
 
         ' 엑셀 파일의 셀들을 정리한다.
         .Range(.Cells(startRow, 1), .Cells(endRow, endCol)).UnMerge
@@ -602,7 +610,7 @@ End Function
 Private Function CheckDataFile() As Boolean
         
     Dim arrHeader As Variant
-    Dim posY As Long, posX As Long, I As Integer
+    Dim posY As Long, posX As Long, index As Integer
     Dim strErr As String
     
     CheckDataFile = True
@@ -617,17 +625,17 @@ Private Function CheckDataFile() As Boolean
                 
         posX = 1: posY = 2
         
-        For I = LBound(arrHeader) To UBound(arrHeader)
-            If arrHeader(I, 1) = .Cells(posY, posX) Then
+        For index = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(index, 1) = .Cells(posY, posX) Then
             
             Else
-                strErr = strErr & arrHeader(I, 1) & ", "
+                strErr = strErr & arrHeader(index, 1) & ", "
                 CheckDataFile = False
             End If
             
             posY = posY + 1
             
-        Next I
+        Next index
         
     End With
         
@@ -641,17 +649,17 @@ Private Function CheckDataFile() As Boolean
                 
         posX = 1: posY = 2
         
-        For I = LBound(arrHeader) To UBound(arrHeader)
-            If arrHeader(I, 1) = .Cells(posY, posX) Then
+        For index = LBound(arrHeader) To UBound(arrHeader)
+            If arrHeader(index, 1) = .Cells(posY, posX) Then
             
             Else
-                strErr = strErr & arrHeader(I, 1) & ", "
+                strErr = strErr & arrHeader(index, 1) & ", "
                 CheckDataFile = False
             End If
             
             posY = posY + 1
             
-        Next I
+        Next index
         
     End With
     

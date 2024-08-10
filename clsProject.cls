@@ -163,7 +163,7 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
     startDate = 0 ' 시작일 (0: 미시작)
     'profit                 = 100   ' 총 기대 수익 (HR 종속 MakeProjectHRandprofit 함수에서 생성)
     experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
-    successProbability = 100 '   수주 성공 확률
+    successProbability = 100 '   song 수주 성공 확률
     numCashFlows = MAX_N_CF ' 비용 지급 횟수 (규모에 따라 변경 가능)
 
     Call CreateActivities
@@ -286,27 +286,27 @@ End Function
 
 ' 활동별 투입 인력 생성, 프로젝트 전체 기대 수익 생성 및 기록
 Public Sub CalculateHRandprofit()
-    Dim i As Integer
+    Dim index As Integer
     Dim j As Integer
     Dim high As Integer, mid As Integer, low As Integer
     high = 0: mid = 0: low = 0
 
-    For i = 1 To numActivities
+    For index = 1 To numActivities
         j = Int(Rnd() * 100)
         If (0 < j) And (j <= RND_HR_H) Then
-            activities(i).HighSkill = 1
+            activities(index).HighSkill = 1
         ElseIf (RND_HR_H < j) And (j <= RND_HR_M) Then
-            activities(i).MidSkill = 1
+            activities(index).MidSkill = 1
         Else
-            activities(i).LowSkill = 1
+            activities(index).LowSkill = 1
         End If
-    Next i
+    Next index
 
-    For i = 1 To numActivities
-        high = high + activities(i).HighSkill * activities(i).duration
-        mid = mid + activities(i).MidSkill * activities(i).duration
-        low = low + activities(i).LowSkill * activities(i).duration
-    Next i
+    For index = 1 To numActivities
+        high = high + activities(index).HighSkill * activities(index).duration
+        mid = mid + activities(index).MidSkill * activities(index).duration
+        low = low + activities(index).LowSkill * activities(index).duration
+    Next index
 
     profit = CalculateTotalLaborCost(high, mid, low)
 End Sub
@@ -445,8 +445,10 @@ End Function
 
 
 ' 프로젝트의 모든 정보를 엑셀에 출력한다.
-Public Sub PrintInfo()
-    Dim i As Integer
+' song 출력속도 개선 필요함. 현재는 하나의 프로젝트 정보를 모아서 시트의 특정 부분에 출력하고있다.
+Public Sub PrintProjectInfomation()
+
+    Dim index As Integer
     Dim posX As Integer
     Dim posY As Integer
 
@@ -464,9 +466,9 @@ Public Sub PrintInfo()
     posX = posX + 1: projectInfo(posY, posX) = successProbability
     posX = posX + 1: projectInfo(posY, posX) = numCashFlows
 
-    For i = 1 To MAX_N_CF
-        posX = posX + 1: projectInfo(posY, posX) = cashFlows(i)
-    Next i
+    For index = 1 To MAX_N_CF
+        posX = posX + 1: projectInfo(posY, posX) = cashFlows(index)
+    Next index
 
     posX = posX + 1: projectInfo(posY, posX) = firstPayment
     posX = posX + 1: projectInfo(posY, posX) = middlePayment
@@ -478,19 +480,19 @@ Public Sub PrintInfo()
     posX = posX + 1: projectInfo(posY, posX) = middlePaymentMonth
     posX = posX + 1: projectInfo(posY, posX) = finalPaymentMonth
 
-    For i = 1 To MAX_ACT
+    For index = 1 To MAX_ACT
         Dim strAct As String, strNum As String
-        strNum = Format(i, "#0")
+        strNum = Format(index, "#0")
         strAct = "Activity" & strNum
 
         posX = 1: posY = posY + 1: projectInfo(posY, posX) = strAct
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).duration
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).startDate
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).EndDate
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).HighSkill
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).MidSkill
-        posX = posX + 1: projectInfo(posY, posX) = activities(i).LowSkill
-    Next i
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).duration
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).startDate
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).EndDate
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).HighSkill
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).MidSkill
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).LowSkill
+    Next index
 
     posY = (projectNum - 1) * PRJ_SHEET_HEADER_H + 4
 

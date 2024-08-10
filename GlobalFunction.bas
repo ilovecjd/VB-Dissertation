@@ -50,23 +50,24 @@ Public gPrintDurationTable() As Variant ' 매번 생성해도 시간차이 없을듯..
 
 Public Type Environment_
     SimulationWeeks As Integer
-    WeeklyProb As Double
-    Hr_Init_H As Integer
-    Hr_Init_M As Integer
-    Hr_Init_L As Integer
-    Hr_LeadTime As Integer
-    Cash_Init As Integer
-    ProblemCnt As Integer
+    maxTableSize    As Integer ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
+    WeeklyProb      As Double
+    Hr_Init_H       As Integer
+    Hr_Init_M       As Integer
+    Hr_Init_L       As Integer
+    Hr_LeadTime     As Integer
+    Cash_Init       As Integer
+    ProblemCnt      As Integer
 End Type
 
 Public Type Activity_
-    ActivityType As Integer
-    duration As Integer
-    StartDate As Integer
-    EndDate As Integer
-    HighSkill As Integer
-    MidSkill As Integer
-    LowSkill As Integer
+    ActivityType    As Integer
+    duration        As Integer
+    startDate       As Integer
+    EndDate         As Integer
+    HighSkill       As Integer
+    MidSkill        As Integer
+    LowSkill        As Integer
 End Type
 
 Public Property Get GetExcelEnv() As Environment_
@@ -104,14 +105,14 @@ End Property
 ' 전역적으로 사용하는 테이블들을 채운다.
 Sub Prologue(TableInit As Integer)
 
-    Dim I As Integer
+    Dim index As Integer
     
     If gExcelInitialized = False Then
 
         ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-        For I = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(I) = I
-        Next I
+        For index = 1 To GlobalEnv.SimulationWeeks
+            gPrintDurationTable(index) = index
+        Next index
 
         gExcelInitialized = True
     End If
@@ -179,15 +180,15 @@ Private Function LoadProjects() As Boolean
             prjInfo = .Range(.Cells(startRow, 1), .Cells(endRow, PRJ_SHEET_HEADER_W)).value
         End With
 
-        tempPrj.ProjectType = prjInfo(1, 1)
+        tempPrj.projectType = prjInfo(1, 1)
         tempPrj.projectNum = prjInfo(1, 2)
-        tempPrj.OrderDate = prjInfo(1, 3)
-        tempPrj.PossibleStartDate = prjInfo(1, 4)
-        tempPrj.ProjectDuration = prjInfo(1, 5)
-        tempPrj.StartDate = prjInfo(1, 6)
-        tempPrj.Profit = prjInfo(1, 7)
-        tempPrj.Experience = prjInfo(1, 8)
-        tempPrj.SuccessProbability = prjInfo(1, 9)
+        tempPrj.orderDate = prjInfo(1, 3)
+        tempPrj.possiblestartDate = prjInfo(1, 4)
+        tempPrj.projectDuration = prjInfo(1, 5)
+        tempPrj.startDate = prjInfo(1, 6)
+        tempPrj.profit = prjInfo(1, 7)
+        tempPrj.experience = prjInfo(1, 8)
+        tempPrj.successProbability = prjInfo(1, 9)
         
         ' Cash Folwer 설정
         Dim tempCF(1 To MAX_N_CF) As Integer
@@ -195,23 +196,23 @@ Private Function LoadProjects() As Boolean
         For index = 1 To MAX_N_CF
             tempCF(index) = prjInfo(1, 10 + index)
         Next index
-        tempPrj.SetPrjCashFlows tempCF
+        tempPrj.SetPrjcashFlows tempCF
 
-        tempPrj.FirstPayment = prjInfo(1, 14)
-        tempPrj.MiddlePayment = prjInfo(1, 15)
-        tempPrj.FinalPayment = prjInfo(1, 16)
+        tempPrj.firstPayment = prjInfo(1, 14)
+        tempPrj.middlePayment = prjInfo(1, 15)
+        tempPrj.finalPayment = prjInfo(1, 16)
 
-        tempPrj.NumActivities = prjInfo(2, 2)
-        tempPrj.FirstPaymentMonth = prjInfo(2, 11)
-        tempPrj.MiddlePaymentMonth = prjInfo(2, 12)
-        tempPrj.FinalPaymentMonth = prjInfo(2, 13)
+        tempPrj.numActivities = prjInfo(2, 2)
+        tempPrj.firstPaymentMonth = prjInfo(2, 11)
+        tempPrj.middlePaymentMonth = prjInfo(2, 12)
+        tempPrj.finalPaymentMonth = prjInfo(2, 13)
         
         
         ' Activity 설정. Activity는 메모리 할당 필요!!!!!
         Dim tempAct As Activity_
-        For index = 1 To tempPrj.NumActivities
+        For index = 1 To tempPrj.numActivities
             tempAct.duration = prjInfo(2 + index, 2)
-            tempAct.StartDate = prjInfo(2 + index, 3)
+            tempAct.startDate = prjInfo(2 + index, 3)
             tempAct.EndDate = prjInfo(2 + index, 4)
             tempAct.HighSkill = prjInfo(2 + index, 5)
             tempAct.MidSkill = prjInfo(2 + index, 6)
@@ -403,26 +404,26 @@ End Function
 
 Function PrintProjectAll()
     Dim temp As clsProject
-    Dim I As Integer
+    Dim index As Integer
 
-    For I = 1 To gTotalProjectNum
-        Set temp = gProjectTable(I)
-        Call temp.PrintInfo
-    Next I
+    For index = 1 To gTotalProjectNum
+        Set temp = gProjectTable(index)
+        Call temp.PrintProjectInfomation
+    Next index
 End Function
 
 Function ConvertToBase1(arr As Variant) As Variant
-    Dim I As Integer
+    Dim index As Integer
     Dim newArr() As Variant
     ReDim newArr(1 To UBound(arr) - LBound(arr) + 1)
-    For I = LBound(arr) To UBound(arr)
-        newArr(I - LBound(arr) + 1) = arr(I)
-    Next I
+    For index = LBound(arr) To UBound(arr)
+        newArr(index - LBound(arr) + 1) = arr(index)
+    Next index
     ConvertToBase1 = newArr
 End Function
 
 Function PivotArray(arr As Variant) As Variant
-    Dim I As Integer
+    Dim index As Integer
     Dim rowCount As Integer
     Dim result() As Variant
     
@@ -433,9 +434,9 @@ Function PivotArray(arr As Variant) As Variant
     ReDim result(1 To rowCount, 1 To 1)
     
     ' 1차원 배열을 2차원 배열로 변환
-    For I = LBound(arr) To UBound(arr)
-        result(I, 1) = arr(I)
-    Next I
+    For index = LBound(arr) To UBound(arr)
+        result(index, 1) = arr(index)
+    Next index
     
     PivotArray = result
 End Function
@@ -470,8 +471,8 @@ Function ClearSheet(ws As Object)
     With ws
         Dim endRow As Long
         Dim endCol As Long
-        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
-        endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
+        endRow = .UsedRange.Rows.count + .UsedRange.Row - 1
+        endCol = .UsedRange.Columns.count + .UsedRange.Column - 1
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).UnMerge
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).Clear
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).ClearContents
@@ -495,18 +496,18 @@ End Function
 
 Function FindRowWithKeyword(ws As Object, keyword As String) As Long
     Dim lastRow As Long
-    Dim I As Long
+    Dim index As Long
     
     ' 엑셀 워크시트의 마지막 행 구하기
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
+    lastRow = ws.Cells(ws.Rows.count, 1).End(-4162).Row ' xlUp = -4162
 
     ' 1번 열을 순회하며 키워드 찾기
-    For I = 1 To lastRow
-        If InStr(1, ws.Cells(I, 1).value, keyword, vbTextCompare) > 0 Then
-            FindRowWithKeyword = I
+    For index = 1 To lastRow
+        If InStr(1, ws.Cells(index, 1).value, keyword, vbTextCompare) > 0 Then
+            FindRowWithKeyword = index
             Exit Function
         End If
-    Next I
+    Next index
 
     ' 키워드를 찾지 못한 경우
     FindRowWithKeyword = 0
@@ -516,7 +517,7 @@ Function GetLastColumnValue(ws As Object, rowNumber As Long) As Variant
     Dim lastCol As Long
     
     ' 특정 행의 마지막 열 번호 구하기
-    lastCol = ws.Cells(rowNumber, ws.Columns.Count).End(-4159).Column ' xlToLeft = -4159
+    lastCol = ws.Cells(rowNumber, ws.Columns.count).End(-4159).Column ' xlToLeft = -4159
 
     ' 마지막 열의 값 반환
     GetLastColumnValue = ws.Cells(rowNumber, lastCol).value
@@ -528,7 +529,7 @@ Private Function SetProjectActivity(cProject As clsProject, index As Integer, ac
 
     Call cProject.SetActivityDuration(index, activity.ActivityType)
     Call cProject.SetActivityDuration(index, activity.duration)
-    Call cProject.SetActivityStartDate(index, activity.StartDate)
+    Call cProject.SetActivitystartDate(index, activity.startDate)
     Call cProject.SetActivityEndDate(index, activity.EndDate)
     Call cProject.SetActivityHighSkill(index, activity.HighSkill)
     Call cProject.SetActivityMidSkill(index, activity.MidSkill)
