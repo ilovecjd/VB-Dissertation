@@ -26,7 +26,6 @@ Public defferTableSize   As Integer      ' DoneTable의 현재크기 song ==> 동적으�
 
 Private projectTable()   As clsProject  ' 생성된(발주된) 프로젝트를 관리하는 테이블
 
-Private tempHRTable()       As Integer
 Private doingHR_H_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 상급자
 Private doingHR_M_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 중급자
 Private doingHR_L_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 초급자
@@ -99,20 +98,19 @@ Public Sub Init(Id As Integer)
     ' 지속적으로 사용하는 테이블들을 정해진 크기로 할당한다.
     ' 시뮬레이션 이후로도 회사는 계속 운영되므로 테이블크기는 시뮬레이션 기간보다 커야한다.
     ' 시뮬레이션 기간 + 프로젝트가 가질수 있는 최대 기간 만큼의 크기 이어야 한다.
-    ReDim doingTable(1 To doingTableSize, 1 To GlobalEnv.maxTableSize)     ' 진행중인 프로젝트들의 ID를 관리하는 테이블
-    ReDim doneTable(1 To doneTableSize, 1 To GlobalEnv.maxTableSize)       ' 완료된 프로젝트들의 ID를 관리하는 테이블
-    ReDim defferTable(1 To defferTableSize, 1 To GlobalEnv.maxTableSize)   ' 보류된 프로젝트들의 ID를 관리하는 테이블
+    ReDim doingTable(1 To doingTableSize, 1 To GlobalEnv.SimulationWeeks)     ' 진행중인 프로젝트들의 ID를 관리하는 테이블
+    ReDim doneTable(1 To doneTableSize, 1 To GlobalEnv.SimulationWeeks)       ' 완료된 프로젝트들의 ID를 관리하는 테이블
+    ReDim defferTable(1 To defferTableSize, 1 To GlobalEnv.SimulationWeeks)   ' 보류된 프로젝트들의 ID를 관리하는 테이블
     
     ReDim candidateTable(1 To MAX_CANDIDATES) ' 후보 프로젝트들의 ID를 관리하는 테이블
-
-    ReDim tempHRTable(1 To GlobalEnv.maxTableSize)       ' 인원 계산을 위한 임시 테이블
-    ReDim doingHR_H_Table(1 To GlobalEnv.maxTableSize)  ' 프로젝트에 투입된 상급자
-    ReDim doingHR_M_Table(1 To GlobalEnv.maxTableSize)  ' 프로젝트에 투입된 중급자
-    ReDim doingHR_L_Table(1 To GlobalEnv.maxTableSize)  ' 프로젝트에 투입된 초급자
     
-    ReDim totalHR_HTable(1 To GlobalEnv.maxTableSize)  ' 회사가 보유한 모든 상급자
-    ReDim totalHR_MTable(1 To GlobalEnv.maxTableSize)  ' 회사가 보유한 모든 중급자
-    ReDim totalHR_LTable(1 To GlobalEnv.maxTableSize)  ' 회사가 보유한 모든 초급자
+    ReDim doingHR_H_Table(1 To GlobalEnv.Hr_TableSize)  ' 프로젝트에 투입된 상급자
+    ReDim doingHR_M_Table(1 To GlobalEnv.Hr_TableSize)  ' 프로젝트에 투입된 중급자
+    ReDim doingHR_L_Table(1 To GlobalEnv.Hr_TableSize)  ' 프로젝트에 투입된 초급자
+    
+    ReDim totalHR_HTable(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 상급자
+    ReDim totalHR_MTable(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 중급자
+    ReDim totalHR_LTable(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 초급자
 
     totalHR_HTable(1) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 초기화
     totalHR_MTable(1) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
@@ -122,17 +120,17 @@ End Sub
 
 
 ' 이번 기간에 결정할 일들. 프로젝트의 신규진행, 멈춤, 인원증감 결정
-Public Function Decision(thisWeek As Integer)
+Public Function Decision(ThisWeek As Integer)
 
     ' 1. 지난주에 진행중인 프로젝트중 완료되지 않은 프로젝트들만 이번주로 이관
-    Call CheckLastWeek(thisWeek)
+    Call CheckLastWeek(ThisWeek)
     
     ' 2. 진행 가능한 후보프로젝트들을  candidateTable에 모은다
-    Call SelectionOfCandidates(thisWeek)
+    Call SelectionOfCandidates(ThisWeek)
 
     ' 3. 신규 프로젝트 선택 및 진행프로젝트 업데이트
     ' 이번주에 발주된 프로젝트중 시작할 것이 있으면 진행 프로젝트로 기록
-    Call SelectNewProject(thisWeek)
+    Call SelectNewProject(ThisWeek)
 
     ' Call comPrintDashboard()
     '
@@ -166,7 +164,7 @@ End Function
 
 ' 후보 프로젝트들(candidateTable)중에서 가능한것들을 찾는다.
 ' 가능한 프로젝트들 중에서 정책에 따라서 진행할 프로젝트를 선택한다.
-Private Function SelectNewProject(thisWeek As Integer)
+Private Function SelectNewProject(ThisWeek As Integer)
 
     Dim cProject        As clsProject
     Dim cnt             As Integer
@@ -176,17 +174,17 @@ Private Function SelectNewProject(thisWeek As Integer)
     Dim endProjectNum   As Integer
 
 
-    If thisWeek = 0 Then ' song ==> 현재까지 코드에서는 0 번째 주 라는 개념은 없다.
+    If ThisWeek = 0 Then ' song ==> 현재까지 코드에서는 0 번째 주 라는 개념은 없다.
         Exit Function
     End If
     
-    cnt = gOrderTable(2, thisWeek)
+    cnt = gOrderTable(2, ThisWeek)
     If cnt = 0 Then ' 이번주에 발주된 프로젝트가 없다.
         Exit Function
     End If
 
-    startProjectNum = gOrderTable(1, thisWeek) + 1  ' 이번기간에 처음 프로젝트
-    endProjectNum = gOrderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
+    startProjectNum = gOrderTable(1, ThisWeek) + 1  ' 이번기간에 처음 프로젝트
+    endProjectNum = gOrderTable(1, ThisWeek) + cnt  ' 이번기간의 마지막 프로젝트
 
     ' song ==> 일단 모든 프로젝트를 다 하는것으로 하자. 추후 조건을 추가한다. 인원, 정책
     For Id = startProjectNum To endProjectNum
@@ -197,11 +195,11 @@ Private Function SelectNewProject(thisWeek As Integer)
 
         ' song ==> 프로젝트를 선택할지 말지 결정하는 루틴이 필요함. 현재는 모두 선택하는 것으로
         Else
-            cProject.startDate = thisWeek
+            cProject.startDate = ThisWeek
             
             ' song 프로젝트 추가시 Call AddWorkProject(cProject) '프로젝트 관리 테이블들, 프로젝트와 관련된 테이블들 모두 업데이트 하는 코드로 변경예정
             Call AddProjectEntry(doingTable, doingTableSize, cProject.startDate, cProject.projectNum) ' Doing table에 추가
-            Call AddProjectHR(thisWeek, cProject) ' 이번주부터 해당 프로젝트에 투입되는 인력정보 갱신
+            Call AddProjectHR(ThisWeek, cProject) ' 이번주부터 해당 프로젝트에 투입되는 인력정보 갱신
             
             ' 프로젝트 완료시 Call RemoveHrTable(cProject) ' HR Table에서 인력 정보를 제거한다.
             
@@ -225,7 +223,7 @@ End Function
 ' 1. 지난 기간의 정보를 이번기간에 복사하고
 ' 2. 지난 기간에 진행중인 프로젝트중 완료된 것이 있는가?
 ' 3. 완료된 프로젝트들만 이번기간에서 삭제
-Private Function CheckLastWeek(thisWeek As Integer)
+Private Function CheckLastWeek(ThisWeek As Integer)
 
     Dim cProject As clsProject
     Dim cnt     As Integer
@@ -233,22 +231,22 @@ Private Function CheckLastWeek(thisWeek As Integer)
     Dim Id      As Integer
 
 
-    If thisWeek = 1 Then ' song ==> 현재까지 코드에서는 처음 시작에는 지난주가 없다
+    If ThisWeek = 1 Then ' song ==> 현재까지 코드에서는 처음 시작에는 지난주가 없다
         Exit Function
     End If
     
-    cnt = doingTable(1, thisWeek - 1) ' 지난주에 진행 중이던 프로젝트의 갯수
+    cnt = doingTable(1, ThisWeek - 1) ' 지난주에 진행 중이던 프로젝트의 갯수
     If cnt = 0 Then ' song ==> 지난주에 진행중이던 프로젝트가 없다.
         Exit Function
     End If
 
     ' 지난 기간의 정보를 이번기간에 복사하고
-    Call CopyLastToCurrent(doingTable, thisWeek, cnt)
+    Call CopyLastToCurrent(doingTable, ThisWeek, cnt)
 
     '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
     For I = 1 To cnt
 
-        Id = doingTable(I + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
+        Id = doingTable(I + 1, ThisWeek) ' 프로젝트 객체의 ID를 가져온다
 
         If Id = 0 Then
             Exit For
@@ -259,8 +257,8 @@ Private Function CheckLastWeek(thisWeek As Integer)
         If cProject.projectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
         
             ' 프로젝트 Object 검사
-            If thisWeek = (cProject.startDate + cProject.projectDuration - 1) Then ' 지난번에 끝났으면
-                Call RemoveFromTable(doingTable, doingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
+            If ThisWeek = (cProject.startDate + cProject.projectDuration - 1) Then ' 지난번에 끝났으면
+                Call RemoveFromTable(doingTable, doingTableSize, ThisWeek, cProject.projectNum) ' doing table에서 삭제
                 I = I - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
             End If
             
@@ -274,21 +272,21 @@ End Function
 
 ' 지난 기간의 정보를 이번기간에 복사하고 복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
 ' 복사할 테이블, 현재기간, 이전기간의 프로젝트 갯수
-Private Function CopyLastToCurrent(prjTable As Variant, ByVal thisWeek As Integer, ByVal lastProjectCnt As Integer)
+Private Function CopyLastToCurrent(prjTable As Variant, ByVal ThisWeek As Integer, ByVal lastProjectCnt As Integer)
 
     ' song ==> 예외 처리 필요
     Dim index As Integer
     
     For index = 1 To (lastProjectCnt + 1)
-        prjTable(index, thisWeek) = prjTable(index, thisWeek - 1)
+        prjTable(index, ThisWeek) = prjTable(index, ThisWeek - 1)
     Next
     
 End Function
 
 
 
-
-Public Function Resize2DArray(arr As Variant, newRows As Integer, newCols As Integer)
+' 2차원 배열의 크기를 변경하고 기존 값을 복사한다.
+Public Function Resize2DArray(ByRef arr As Variant, newRows As Integer, newCols As Integer)
 
     Dim oldRows As Integer
     Dim oldCols As Integer
@@ -307,9 +305,10 @@ Public Function Resize2DArray(arr As Variant, newRows As Integer, newCols As Int
         Next j
     Next index
     
+    ' 자료형의 문제로 두번 복사해야만 한다.
     ReDim arr(1 To newRows, 1 To newCols)
 
-      For index = 1 To oldRows
+    For index = 1 To oldRows
         For j = 1 To oldCols
             arr(index, j) = tempArray(index, j)
         Next j
@@ -317,29 +316,31 @@ Public Function Resize2DArray(arr As Variant, newRows As Integer, newCols As Int
     
 End Function
 
+' 테이블의 week에 projectID 를 추가한다.
+' 테이블의 크기를 벗어나면 테이블의 크기를 변경한다.
+' tableSize 를 변경한다. (리턴함)
+Public Function AddProjectEntry(Table As Variant, TableRow As Integer, ThisWeek As Integer, ProjectID As Integer) As Integer
 
-Public Function AddProjectEntry(prjTable As Variant, tableSize As Integer, week As Integer, projectID As Integer) As Integer
-
-    Dim currentRow As Integer
+    Dim addRow As Integer ' ProjectId를 기록할 행번호
     
-    ' 현재 주(week)의 첫 번째 행 값(값이 들어 있는 행의 갯수)을 가져옴
-    currentRow = prjTable(1, week) + 2
+    ' 1번행은 해더(누계)   addRow = 현재 주(week)의 누계 + 헤더(누계) 1행 + 다음 1행
+    addRow = Table(1, ThisWeek) + 2
     
-    ' 만약 현재 행의 값이 tableSize를 초과하면 배열을 다시 할당
-    ' currentRow는 ID 갯수 , tableSize는 currentRow + sum 을 기록하는 추가 행
-    If currentRow = (tableSize - 1) Then
-        tableSize = tableSize + 1
-        Call Resize2DArray(prjTable, tableSize, GlobalEnv.SimulationWeeks)
+    ' 추가할 행이 테이블의 끝을 벗어나면 배열을 다시 할당
+    If addRow >= TableRow Then
+        TableRow = addRow '  리턴해주고 있지만 안전하게 원본인 멤버변수도 변경한다. ByRef
+        Call Resize2DArray(Table, TableRow, GlobalEnv.SimulationWeeks)
     End If
     
-    ' 프로젝트 ID를 prjTable의 적절한 위치에 추가
-    prjTable(currentRow, week) = projectID
+    ' 프로젝트 ID를 Table의 next 위치에 추가
+    Table(addRow, ThisWeek) = ProjectID
     
-    ' 첫 번째 행의 값을 1 증가시켜 행의 갯수를 업데이트
-    prjTable(1, week) = prjTable(1, week) + 1
+    ' 첫 번째 행의 값을 1 증가시켜 누계를 업데이트
+    Table(1, ThisWeek) = Table(1, ThisWeek) + 1
     
     ' 최종 변경된 행의 크기를 반환
-    AddProjectEntry = tableSize
+    AddProjectEntry = TableRow
+    
 End Function
 
 ' '' 프로젝트 관리 테이블에 프로젝트를 넣는 범용적인 함수 (Doing, Done, Deffer )
@@ -372,7 +373,7 @@ End Function
  
 ' End Sub
 
-Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal week As Integer, ByVal projectID As Integer)
+Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal Week As Integer, ByVal ProjectID As Integer)
 
     Dim I       As Integer
     Dim sumRow  As Integer ' sum 이 들어있는 위치
@@ -381,10 +382,10 @@ Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal week As Int
         
     sumRow = 1
     found = False
-    idCount = prjTable(sumRow, week)
+    idCount = prjTable(sumRow, Week)
 
     ' 배열의 크기 확인
-    If UBound(prjTable, 2) < week Or week < 1 Or week > GlobalEnv.SimulationWeeks Then
+    If UBound(prjTable, 2) < Week Or Week < 1 Or Week > GlobalEnv.SimulationWeeks Then
         MsgBox "Week is out of range", vbExclamation
         Exit Sub
     End If
@@ -392,7 +393,7 @@ Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal week As Int
     
     ' 해당 주에서 projectID 찾기
     For I = (sumRow + 1) To (sumRow + idCount)
-        If prjTable(I, week) = projectID Then
+        If prjTable(I, Week) = ProjectID Then
             found = True
             Exit For
         End If
@@ -404,31 +405,25 @@ Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal week As Int
         For I = I To tableSize
 
             If I = tableSize Then 'ID가 마지막 행에 들어 있으면
-                prjTable(I, week) = Empty
+                prjTable(I, Week) = Empty
             Else
-                prjTable(I, week) = prjTable(I + 1, week)
+                prjTable(I, Week) = prjTable(I + 1, Week)
             End If
 
         Next I
 
         ' 합계 및 프로젝트 수 감소
-        prjTable(sumRow, week) = prjTable(sumRow, week) - 1
+        prjTable(sumRow, Week) = prjTable(sumRow, Week) - 1
         
     Else
-        MsgBox "Project ID " & projectID & " not found in week " & week, vbExclamation
+        MsgBox "Project ID " & ProjectID & " not found in week " & Week, vbExclamation
     End If
 
 End Sub
 
-' 이번주를 전달 받아 다음주에 진행 가능한 후보들을 선정한다.
-' 리드타임 적용부터 먼저 정리하자.
-
-
-
-
 
 ' 진행 가능한 모든 후보프로젝트들을 모은다.
-Function SelectionOfCandidates(thisWeek As Integer)
+Function SelectionOfCandidates(ThisWeek As Integer)
 
     Dim cProject        As clsProject
     Dim cnt             As Integer
@@ -440,7 +435,7 @@ Function SelectionOfCandidates(thisWeek As Integer)
     Dim endProjectNum   As Integer
 
 
-    If thisWeek = 0 Then ' song ==> 현재까지 코드에서는 0 번째 주 라는 개념은 없다.
+    If ThisWeek = 0 Then ' song ==> 현재까지 코드에서는 0 번째 주 라는 개념은 없다.
         Exit Function
     End If
     
@@ -449,13 +444,13 @@ Function SelectionOfCandidates(thisWeek As Integer)
         candidateTable(cnt) = 0
     Next
     
-    cnt = gOrderTable(2, thisWeek)
+    cnt = gOrderTable(2, ThisWeek)
     If cnt = 0 Then ' 이번주에 발주된 프로젝트가 없다.
         Exit Function
     End If
 
-    startProjectNum = gOrderTable(1, thisWeek) + 1  ' 이번기간의 처음 프로젝트
-    endProjectNum = gOrderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
+    startProjectNum = gOrderTable(1, ThisWeek) + 1  ' 이번기간의 처음 프로젝트
+    endProjectNum = gOrderTable(1, ThisWeek) + cnt  ' 이번기간의 마지막 프로젝트
 
     ' 이번기간에 발주된 프로젝트을 모두 모은다.
     index = 1
@@ -468,7 +463,7 @@ Function SelectionOfCandidates(thisWeek As Integer)
         ' song ==> 내부 프로젝트는 별도 테이블로 관리하는것이 맞을것 같다. 추후 결정
         
         Else '
-            If IsEnoughHR(thisWeek, cProject) = True Then
+            If IsEnoughHR(ThisWeek, cProject) = True Then
                 candidateTable(index) = cProject.projectNum
             End If
         End If
@@ -482,7 +477,7 @@ End Function
 
 
 
-Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
+Function IsEnoughHR(ThisWeek As Integer, cProject As clsProject) As Boolean
         
     Dim activityCnt As Integer
     Dim activity    As Activity_
@@ -499,11 +494,11 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
     Dim tempM_Table() As Integer
     Dim tempL_Table() As Integer
     
-    ReDim tempH_Table(GlobalEnv.maxTableSize)
-    ReDim tempM_Table(GlobalEnv.maxTableSize)
-    ReDim tempL_Table(GlobalEnv.maxTableSize)
+    ReDim tempH_Table(GlobalEnv.Hr_TableSize)
+    ReDim tempM_Table(GlobalEnv.Hr_TableSize)
+    ReDim tempL_Table(GlobalEnv.Hr_TableSize)
         
-    For index = 1 To GlobalEnv.maxTableSize
+    For index = 1 To GlobalEnv.Hr_TableSize
         tempH_Table(index) = doingHR_H_Table(index)
         tempM_Table(index) = doingHR_M_Table(index)
         tempL_Table(index) = doingHR_L_Table(index)
@@ -518,7 +513,7 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
         activity = GetProjectActivity(cProject, index)
         
         'activity 시작시간을 시뮬레이션의 절대 시간으로 변경
-        actStart = thisWeek + activity.startDate - 1
+        actStart = ThisWeek + activity.startDate - 1
         actEnd = actStart + activity.duration - 1
         
         ' 프로젝트 시작 시점부터 activity의 수행 기간동안
@@ -543,7 +538,7 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
     
     ' 인력 풀과 비교해서 투입에 필요한 인원이 총 인원보다 크면 False 리턴
     ' 코딩 편의상 모든 기간을 체크한다.
-    For index = 1 To GlobalEnv.maxTableSize
+    For index = 1 To GlobalEnv.Hr_TableSize
     
         If tempH_Table(index) > doingHR_H_Table(index) Then
             IsEnoughHR = False
@@ -564,65 +559,6 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
     
 End Function
 
-'＇＇＇
-
-
-' 주어진 주간부터 Project 를 진행할 인적자원이 있는지 체크하는 함수
-Function CheckHRAvailability(ByVal thisWeek As Integer, cProject As clsProject) As Boolean
-
-    Dim index As Integer
-    Dim startWeek As Integer, endWeek As Integer, totalHR As Integer
-    Dim duration As Integer
-        
-    ' 인력자원이 운영이 가능한 프로젝트이면 True, 아니면 False 리턴
-    CheckHRAvailability = True
-    
-    
-    ' 프로젝트 시작주와 종료주를 구한다.
-    startWeek = cProject.startDate
-    endWeek = cProject.startDate + cProject.projectDuration - 1
-    
-    ' Activity 별로 프로젝트 기간동안 매주 추가되는 인원을 계산한다. 인원이 초과되면 프로젝트 진행 불가
-    
-    For index = startWeek To endWeek
-        totalHR = tempHRTable(index)
-        'totalHR = totalHR + cProject.PrjActivities
-        
-    Next
-    
-    
-    ' 진행중인 프로젝트에 투입된 상급자
-    For index = 1 To GlobalEnv.maxTableSize
-        tempHRTable(index) = doingHR_H_Table(index)
-    Next
-    
-    
-    ' 진행중인 프로젝트에 투입된 중급자
-    For index = 1 To GlobalEnv.maxTableSize
-        tempHRTable(index) = doingHR_M_Table(index)
-    Next
-    
-    ' 진행중인 프로젝트에 투입된 초급자
-    For index = 1 To GlobalEnv.maxTableSize
-        tempHRTable(index) = doingHR_L_Table(index)
-    Next
-    
- 
-    
-    
-    
-    
-    ' 프로젝트 시작주와 종료주를 구한다.
-    'startWeek =
-    
-    ' 프로젝트 기간동안 매주 추가되는 인원을 계산한다. 인원이 초과되면 프로젝트 진행 불가
-    For index = startWeek To endWeek
-        
-    Next
-    
-    
-    
-End Function
 
 ' song 에러이면 null 리턴하는 코드와 사용시 검사하는 코드 추가 필요
 'srcTable 크기와 동일한 Table를 생성하고 srcTable 의 내용을 복사해서 리턴해 준다.
@@ -636,7 +572,7 @@ Function CopyTableToRedimTable(srcTable() As Variant) As Variant()
 End Function
 
 ' project ID 에 필요한 인력정보를 인력정보 테이블에 업데이트 한다.
-Function AddProjectHR(thisWeek As Integer, cProject As clsProject)
+Function AddProjectHR(ThisWeek As Integer, cProject As clsProject)
     
     Dim activityCnt As Integer
     Dim activity    As Activity_
@@ -654,7 +590,7 @@ Function AddProjectHR(thisWeek As Integer, cProject As clsProject)
         activity = GetProjectActivity(cProject, index)
         
         'activity 시작시간을 시뮬레이션의 절대 시간으로 변경
-        actStart = thisWeek + activity.startDate - 1
+        actStart = ThisWeek + activity.startDate - 1
         actEnd = actStart + activity.duration - 1
         
         ' 프로젝트 시작 시점부터 activity의 수행 기간동안

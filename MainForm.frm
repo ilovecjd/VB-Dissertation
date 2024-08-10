@@ -228,84 +228,11 @@ Enum LoadOrCreate
 End Enum
 
 
-' 프로젝트들을 생성 한다.
-' 1. 기존 프로젝트들을 그대로 사용
-'   1.1 기존 data.xlsm 파일에서 로드
-'
-' 2. 프로젝트를 새롭게 생성
-'   2.1 환경변수 업데이트
-'   2.2 새로운 프로젝트들 생성
-'   2.2 data.xlsm 파일의 시트들 업데이트
-Private Sub btnGenBoardNProject_Click()
-    
-    Dim Res As Integer
-    Dim index   As Integer
-
-    ' 입력값들을 업데이트 한다.
-    ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
-    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-    GlobalEnv.maxTableSize = txtSimulationWeeks.Text + 80
-    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
-    GlobalEnv.Hr_Init_H = txtHr_H.Text
-    GlobalEnv.Hr_Init_L = txtHr_M.Text
-    GlobalEnv.Hr_Init_M = txtHr_L.Text
-    GlobalEnv.Hr_LeadTime = txtLeadTime.Text
-    GlobalEnv.Cash_Init = txtCash.Text
-    GlobalEnv.ProblemCnt = txtProblemCount.Text
-
-    '1. 기존 프로젝트들을 그대로 사용
-    If gProjectLoadOrCreate = LoadOrCreate.Load Then
-        Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
-        If (vbNo = Res) Then
-            Exit Sub ' btnGenBoardNProject_Click 함수 종료
-        Else
-            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("주"))
-            
-            ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
-            ' song 파일안의 데이터 유효성 검증을 더 하자.
-            Call LoadTablesFromExcel
-        End If
-        
-    '2. 화면에 입력된 값으로 프로젝트를 새롭게 생성
-    Else
-        Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
-        
-        If (vbNo = Res) Then
-            Exit Sub ' btnGenBoardNProject_Click 함수 종료
-            
-        Else
-            
-            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            
-            For index = 1 To GlobalEnv.SimulationWeeks
-                gPrintDurationTable(index) = index
-            Next index
-        
-            Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
-            Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
-            Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
-            Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
-            Call PrintProjectAll    ' 프로젝트 전체를 출력한다
-            
-        End If  ' If (vbNo = Res) Then
-        
-    End If  ' If gProjectLoadOrCreate = LoadOrCreate.Load Then
-        
-    
-
-End Sub
-
-
-
-
-
 
 ' 프로그램에서 사용할 기본적인 전역변수들을 설정한다.
 ' 파일 존재 여부  / 엑셀 파일 유효성 검사
 ' 기본 환경 변수를 어디에서 가져오는가 결정 (엑셀 파일 또는 디폴트 값들)
-' 버튼클릭 시 ==> 기본 환경변수에 기록된 대로 생성 할것인가?? 엑셀에서 로드할 것인가?
-'
+' 버튼클릭 시 ==> 기본 환경변수에 기록된 대로 생성 할것인가?? 엑셀에서 로드할 것인가?'
 Private Sub Form_Load()
         
     GCurrentPath = App.Path ' 프로그램 및 data.xlsm 파일의 경로
@@ -342,6 +269,7 @@ End Sub
 Private Sub Form_Unload(Cancel As Integer)
     
     Dim retCode As Integer
+    
     retCode = MsgBox("data.xlsm 을 저장하고 종료하려면 Yes," + vbNewLine _
             + "저장없이 종료하려면 No" + vbNewLine _
             + "계속 실행하려면 Cancel 을 선택 하시오", vbYesNoCancel, "프로그램 종료")
@@ -364,6 +292,75 @@ Private Sub Form_Unload(Cancel As Integer)
     Call WriteLog(STR_END_EXCEL) ' 로그파일에 종료를 표시한다.
     
 End Sub
+
+
+' 프로젝트들을 생성 한다.
+' 1. 기존 프로젝트들을 그대로 사용
+'   1.1 기존 data.xlsm 파일에서 로드
+'
+' 2. 프로젝트를 새롭게 생성
+'   2.1 환경변수 업데이트
+'   2.2 새로운 프로젝트들 생성
+'   2.2 data.xlsm 파일의 시트들 업데이트
+Private Sub btnGenBoardNProject_Click()
+    
+    Dim Res As Integer
+    Dim index   As Integer
+
+    ' 입력값들을 업데이트 한다.
+    ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
+    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+    GlobalEnv.maxTableSize = txtSimulationWeeks.Text + 80
+    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
+    GlobalEnv.Hr_Init_H = txtHr_H.Text
+    GlobalEnv.Hr_Init_L = txtHr_M.Text
+    GlobalEnv.Hr_Init_M = txtHr_L.Text
+    GlobalEnv.Hr_LeadTime = txtLeadTime.Text
+    GlobalEnv.Cash_Init = txtCash.Text
+    GlobalEnv.ProblemCnt = txtProblemCount.Text
+
+    '1. data.xlsm 파일에 있는 기존 프로젝트들을 그대로 사용
+    If gProjectLoadOrCreate = LoadOrCreate.Load Then
+    
+        Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
+        If (vbNo = Res) Then
+            Exit Sub ' btnGenBoardNProject_Click 함수 종료
+        Else
+            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
+            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("주"))
+            
+            ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
+            ' song 파일안의 데이터 유효성 검증을 더 하자.
+            Call LoadTablesFromExcel
+        End If 'If (vbNo = Res) Then
+        
+    '2. 화면에 입력된 값으로 프로젝트를 새롭게 생성
+    Else
+        Res = MsgBox("Data.xlsm파일의 내용을 지우고 신규 프로젝트들을 생성 합니다" & vbNewLine & "계속 진행 할까요?", vbYesNo, "기본 환경 설정")
+        
+        If (vbNo = Res) Then
+            Exit Sub ' btnGenBoardNProject_Click 함수 종료
+            
+        Else
+            
+            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
+            
+            For index = 1 To GlobalEnv.SimulationWeeks
+                gPrintDurationTable(index) = index
+            Next index
+        
+            Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
+            Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
+            Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
+            Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
+            Call PrintProjectAll    ' 프로젝트 전체를 출력한다
+            
+        End If  ' If (vbNo = Res) Then
+        
+    End If  ' If gProjectLoadOrCreate = LoadOrCreate.Load Then
+
+End Sub
+
 
 ' 로그파일이 없으면 생성, data 파일이 없으면 경고 후 프로그램 종료
 Public Sub CheckFiles()
@@ -594,8 +591,8 @@ Function ClearTableArea(ws As Worksheet, startRow As Long)
     With ws
         Dim endRow As Long ' 마지막행
         Dim endCol As Long ' 마지막열
-        endRow = .UsedRange.Rows.count + .UsedRange.Row - 1
-        endCol = .UsedRange.Columns.count + .UsedRange.Column - 1
+        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
+        endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
 
         ' 엑셀 파일의 셀들을 정리한다.
         .Range(.Cells(startRow, 1), .Cells(endRow, endCol)).UnMerge
