@@ -16,26 +16,27 @@ Option Base 1
 
 
 ' 프로젝트 속성
-Public projectType As Integer ' 프로젝트 타입 (0: 외부 / 1: 내부)
-Public projectNum As Integer ' 프로젝트의 번호
+Public projectType          As Integer  ' 프로젝트 타입 (0: 외부 / 1: 내부)
+Public projectNum           As Integer  ' 프로젝트의 번호
 
-Public orderDate As Integer ' 발주일
-Public possiblestartDate As Integer ' 시작 가능일
-Public projectDuration As Integer ' 프로젝트의 총 기간
-Public startDate As Integer ' 시작일 (0: 미시작)
-Public profit As Double ' 총 기대 수익 (HR 종속)
-Public experience As Integer ' 경험 (0: 무경험 1: 유경험)
-Public successProbability As Integer ' 성공 확률
+Public orderDate            As Integer  ' 발주일
+Public possiblestartDate    As Integer  ' 시작 가능일
+Public endDate              As Integer  ' 프로젝트 종료일
+Public projectDuration      As Integer  ' 프로젝트의 총 기간
+Public startDate            As Integer  ' 시작일 (0: 미시작)
+Public profit               As Double   ' 총 기대 수익 (HR 종속)
+Public experience           As Integer  ' 경험 (0: 무경험 1: 유경험)
+Public successProbability   As Integer  ' 성공 확률
 
 ' 현금 흐름
-Public numCashFlows As Integer ' 비용 지급 횟수
-Private cashFlows() As Integer ' 용역비를 받는 비율을 기록하는 배열
-Public firstPayment As Long ' 선금 액수
-Public middlePayment As Long ' 2차 지급 액수
-Public finalPayment As Long ' 3차 지급 액수
-Public firstPaymentMonth As Integer ' 선금 지급일
-Public middlePaymentMonth As Integer ' 2차 지급일
-Public finalPaymentMonth As Integer ' 3차 지급일`
+Public numCashFlows         As Integer  ' 비용 지급 횟수
+Private cashFlows()         As Integer  ' 용역비를 받는 비율을 기록하는 배열
+Public firstPayment         As Long     ' 선금 액수
+Public middlePayment        As Long     ' 2차 지급 액수
+Public finalPayment         As Long     ' 3차 지급 액수
+Public firstPaymentMonth    As Integer  ' 선금 지급일
+Public middlePaymentMonth   As Integer  ' 2차 지급일
+Public finalPaymentMonth    As Integer  ' 3차 지급일`
 
 ' 활동
 Public numActivities As Integer ' 총 활동 수
@@ -68,7 +69,7 @@ End Function
 
 ' 활동의 EndDate를 반환하는 함수
 Public Function GetActivityEndDate(index As Integer) As Integer
-    GetActivityEndDate = activities(index).EndDate
+    GetActivityEndDate = activities(index).endDate
 End Function
 
 ' 활동의 HighSkill을 반환하는 함수
@@ -106,7 +107,7 @@ End Sub
 
 ' 활동의 EndDate 설정
 Public Sub SetActivityEndDate(index As Integer, value As Integer)
-    activities(index).EndDate = value
+    activities(index).endDate = value
 End Sub
 
 ' 활동의 HighSkill 설정
@@ -160,7 +161,7 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
     ' 프로젝트 생성을 위해 필요한 값들을 생성한다.
     orderDate = ODate ' 발주일
     possiblestartDate = ODate + Int(Rnd() * 4) ' 시작 가능일
-    startDate = 0 ' 시작일 (0: 미시작)
+    startDate = 0 ' 시작여부 (0: 미시작) ' song 변수명 변경하자
     'profit                 = 100   ' 총 기대 수익 (HR 종속 MakeProjectHRandprofit 함수에서 생성)
     experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
     successProbability = 100 '   song 수주 성공 확률
@@ -221,6 +222,7 @@ Public Sub CreateActivities()
     UB = activityAttribute(prjType, 5)
     totalDuration = RandomBetween(Lb, UB)
     projectDuration = totalDuration
+    endDate = possiblestartDate + totalDuration - 1
 
     Lb = 0
     UB = 0
@@ -255,19 +257,19 @@ Public Sub CreateActivities()
         If index = 1 Then
             activities(index).duration = tempDuration
             activities(index).startDate = possiblestartDate '1
-            activities(index).EndDate = possiblestartDate - 1 + tempDuration
+            activities(index).endDate = possiblestartDate - 1 + tempDuration
         ElseIf index = 2 Then
             activities(index).duration = totalDuration - activities(1).duration
-            activities(index).startDate = activities(1).EndDate + 1
-            activities(index).EndDate = possiblestartDate - 1 + totalDuration
+            activities(index).startDate = activities(1).endDate + 1
+            activities(index).endDate = possiblestartDate - 1 + totalDuration
         ElseIf index = 3 Then
             activities(index).duration = tempDuration '3
             activities(index).startDate = possiblestartDate - 1 + totalDuration - tempDuration + 1
-            activities(index).EndDate = possiblestartDate - 1 + totalDuration
+            activities(index).endDate = possiblestartDate - 1 + totalDuration
         Else
             activities(index).duration = tempDuration
             activities(index).startDate = activities(3).startDate - tempDuration
-            activities(index).EndDate = activities(3).startDate - 1
+            activities(index).endDate = activities(3).startDate - 1
         End If
     Next index
 End Sub
@@ -457,15 +459,31 @@ Public Sub PrintProjectInfomation()
     
     posX = 1: posY = 1: projectInfo(posY, posX) = projectType
     posX = posX + 1: projectInfo(posY, posX) = projectNum
-    posX = posX + 1: projectInfo(posY, posX) = orderDate
-    posX = posX + 1: projectInfo(posY, posX) = possiblestartDate
     posX = posX + 1: projectInfo(posY, posX) = projectDuration
-    posX = posX + 1: projectInfo(posY, posX) = startDate
+    posX = posX + 1: projectInfo(posY, posX) = possiblestartDate
+    posX = posX + 1: projectInfo(posY, posX) = endDate
+    posX = posX + 1: projectInfo(posY, posX) = orderDate
     posX = posX + 1: projectInfo(posY, posX) = profit
     posX = posX + 1: projectInfo(posY, posX) = experience
     posX = posX + 1: projectInfo(posY, posX) = successProbability
     posX = posX + 1: projectInfo(posY, posX) = numCashFlows
 
+    
+    'posX = 1: posY = 1: projectInfo(posY, posX) = projectType
+'    posX = posX + 1: projectInfo(posY, posX) = projectNum
+'    posX = posX + 1: projectInfo(posY, posX) = orderDate
+'    posX = posX + 1: projectInfo(posY, posX) = possiblestartDate
+'    posX = posX + 1: projectInfo(posY, posX) = projectDuration
+'    posX = posX + 1: projectInfo(posY, posX) = startDate
+'    posX = posX + 1: projectInfo(posY, posX) = profit
+'    posX = posX + 1: projectInfo(posY, posX) = experience
+'    posX = posX + 1: projectInfo(posY, posX) = successProbability
+'    posX = posX + 1: projectInfo(posY, posX) = numCashFlows
+    
+    
+    
+    
+    
     For index = 1 To MAX_N_CF
         posX = posX + 1: projectInfo(posY, posX) = cashFlows(index)
     Next index
@@ -474,24 +492,34 @@ Public Sub PrintProjectInfomation()
     posX = posX + 1: projectInfo(posY, posX) = middlePayment
     posX = posX + 1: projectInfo(posY, posX) = finalPayment
 
-    posX = 1: posY = 2: projectInfo(posY, posX) = "ActivityCnt"
-    posX = posX + 1: projectInfo(posY, posX) = numActivities
-    posX = posX + 9: projectInfo(posY, posX) = firstPaymentMonth
+
+    posX = 1: posY = 2: projectInfo(posY, posX) = numActivities
+    posX = posX + 10: projectInfo(posY, posX) = firstPaymentMonth
     posX = posX + 1: projectInfo(posY, posX) = middlePaymentMonth
     posX = posX + 1: projectInfo(posY, posX) = finalPaymentMonth
+    
+'    posX = 1: posY = 2: projectInfo(posY, posX) = "ActivityCnt"
+'    posX = posX + 1: projectInfo(posY, posX) = numActivities
+'    posX = posX + 9: projectInfo(posY, posX) = firstPaymentMonth
+'    posX = posX + 1: projectInfo(posY, posX) = middlePaymentMonth
+'    posX = posX + 1: projectInfo(posY, posX) = finalPaymentMonth
 
-    For index = 1 To MAX_ACT
+    
+    For index = 1 To numActivities
         Dim strAct As String, strNum As String
         strNum = Format(index, "#0")
         strAct = "Activity" & strNum
 
-        posX = 1: posY = posY + 1: projectInfo(posY, posX) = strAct
+        posX = 2:        projectInfo(posY, posX) = strAct
         posX = posX + 1: projectInfo(posY, posX) = activities(index).duration
         posX = posX + 1: projectInfo(posY, posX) = activities(index).startDate
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).EndDate
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).HighSkill
+        posX = posX + 1: projectInfo(posY, posX) = activities(index).endDate
+        
+        posX = posX + 2: projectInfo(posY, posX) = activities(index).HighSkill
         posX = posX + 1: projectInfo(posY, posX) = activities(index).MidSkill
         posX = posX + 1: projectInfo(posY, posX) = activities(index).LowSkill
+        
+        posY = posY + 1
     Next index
 
     posY = (projectNum - 1) * PRJ_SHEET_HEADER_H + 4

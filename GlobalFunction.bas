@@ -25,7 +25,7 @@ Public Const P_TYPE_INTERNAL = 1
 Public Const MAX_ACT As Integer = 4
 Public Const MAX_N_CF As Integer = 3
 Public Const PRJ_SHEET_HEADER_W As Integer = 16
-Public Const PRJ_SHEET_HEADER_H As Integer = 8
+Public Const PRJ_SHEET_HEADER_H As Integer = 7
 Public Const RND_HR_H = 20
 Public Const RND_HR_M = 70
 Public Const MAX_PRJ_TYPE As Integer = 5
@@ -64,7 +64,7 @@ Public Type Activity_
     ActivityType    As Integer
     duration        As Integer
     startDate       As Integer
-    EndDate         As Integer
+    endDate         As Integer
     HighSkill       As Integer
     MidSkill        As Integer
     LowSkill        As Integer
@@ -182,10 +182,10 @@ Private Function LoadProjects() As Boolean
 
         tempPrj.projectType = prjInfo(1, 1)
         tempPrj.projectNum = prjInfo(1, 2)
-        tempPrj.orderDate = prjInfo(1, 3)
+        tempPrj.projectDuration = prjInfo(1, 3)
         tempPrj.possiblestartDate = prjInfo(1, 4)
-        tempPrj.projectDuration = prjInfo(1, 5)
-        tempPrj.startDate = prjInfo(1, 6)
+        tempPrj.endDate = prjInfo(1, 5)
+        tempPrj.orderDate = prjInfo(1, 6)
         tempPrj.profit = prjInfo(1, 7)
         tempPrj.experience = prjInfo(1, 8)
         tempPrj.successProbability = prjInfo(1, 9)
@@ -202,7 +202,7 @@ Private Function LoadProjects() As Boolean
         tempPrj.middlePayment = prjInfo(1, 15)
         tempPrj.finalPayment = prjInfo(1, 16)
 
-        tempPrj.numActivities = prjInfo(2, 2)
+        tempPrj.numActivities = prjInfo(2, 1)
         tempPrj.firstPaymentMonth = prjInfo(2, 11)
         tempPrj.middlePaymentMonth = prjInfo(2, 12)
         tempPrj.finalPaymentMonth = prjInfo(2, 13)
@@ -211,12 +211,12 @@ Private Function LoadProjects() As Boolean
         ' Activity 설정. Activity는 메모리 할당 필요!!!!!
         Dim tempAct As Activity_
         For index = 1 To tempPrj.numActivities
-            tempAct.duration = prjInfo(2 + index, 2)
-            tempAct.startDate = prjInfo(2 + index, 3)
-            tempAct.EndDate = prjInfo(2 + index, 4)
-            tempAct.HighSkill = prjInfo(2 + index, 5)
-            tempAct.MidSkill = prjInfo(2 + index, 6)
-            tempAct.LowSkill = prjInfo(2 + index, 7)
+            tempAct.duration = prjInfo(1 + index, 3)
+            tempAct.startDate = prjInfo(1 + index, 4)
+            tempAct.endDate = prjInfo(1 + index, 5)
+            tempAct.HighSkill = prjInfo(1 + index, 7)
+            tempAct.MidSkill = prjInfo(1 + index, 8)
+            tempAct.LowSkill = prjInfo(1 + index, 9)
             Call SetProjectActivity(tempPrj, index, tempAct)
         Next index
 
@@ -304,12 +304,15 @@ Public Sub PrintProjectHeader()
     
     Call ClearSheet(gWsProject) '시트의 모든 내용을 지우고 셀 병합 해제
     
-    strHeader = "타입,순번,발주일,시작가능,기간,시작,수익,경험,성공%,nCF,CF1%,CF2%,CF3%,선금,중도,잔금"
+    'strHeader = "타입,순번,발주일,시작가능,기간,시작,수익,경험,성공%,nCF,CF1%,CF2%,CF3%,선금,중도,잔금"
+    strHeader = "pType,PRJ_ID,기간,시작가능,끝,발주일,총수익,경험,성공%,CF갯수,CF1%,CF2%,CF3%,선금,중도,잔금"
+
     tempArray = Split(strHeader, ",")
     MyArray = ConvertToBase1(tempArray) ' TempArray를 1 기반 배열로 변환
     Call PrintArrayWithLine(gWsProject, 1, 1, MyArray)
     
-    strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3,,,,"
+    'strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3,,,,"
+    strHeader = "act갯수,,Dur,start,end,,HR_H,HR_M,HR_L,,mon_cf1,mon_cf2,mon_cf3,,,,"
     tempArray = Split(strHeader, ",")
     MyArray = ConvertToBase1(tempArray)
     Call PrintArrayWithLine(gWsProject, 2, 1, MyArray)
@@ -530,7 +533,7 @@ Private Function SetProjectActivity(cProject As clsProject, index As Integer, ac
     Call cProject.SetActivityDuration(index, activity.ActivityType)
     Call cProject.SetActivityDuration(index, activity.duration)
     Call cProject.SetActivitystartDate(index, activity.startDate)
-    Call cProject.SetActivityEndDate(index, activity.EndDate)
+    Call cProject.SetActivityEndDate(index, activity.endDate)
     Call cProject.SetActivityHighSkill(index, activity.HighSkill)
     Call cProject.SetActivityMidSkill(index, activity.MidSkill)
     Call cProject.SetActivityLowSkill(index, activity.LowSkill)
