@@ -197,7 +197,12 @@ Private Function SelectNewProject(ThisWeek As Integer)
 
         ' song ==> 프로젝트를 선택할지 말지 결정하는 루틴이 필요함. 현재는 모두 선택하는 것으로
         Else
-            cProject.startDate = ThisWeek
+            cProject.startDate = cProject.possiblestartDate
+            
+            ' song 시뮬레이션 기간 이후에 시작되는 프로젝트는 무시한다.
+            If cProject.startDate > GlobalEnv.SimulationWeeks Then
+                Exit Function
+            End If
             
             ' song 프로젝트 추가시 Call AddWorkProject(cProject) '프로젝트 관리 테이블들, 프로젝트와 관련된 테이블들 모두 업데이트 하는 코드로 변경예정
             Call AddProjectEntry(doingTable, doingTableSize, cProject.startDate, cProject.projectNum) ' Doing table에 추가
@@ -321,12 +326,12 @@ End Function
 ' 테이블의 week에 projectID 를 추가한다.
 ' 테이블의 크기를 벗어나면 테이블의 크기를 변경한다.
 ' tableSize 를 변경한다. (리턴함)
-Public Function AddProjectEntry(Table As Variant, TableRow As Integer, ThisWeek As Integer, ProjectID As Integer) As Integer
+Public Function AddProjectEntry(Table As Variant, TableRow As Integer, addWeek As Integer, ProjectID As Integer) As Integer
 
     Dim addRow As Integer ' ProjectId를 기록할 행번호
     
     ' 1번행은 해더(누계)   addRow = 현재 주(week)의 누계 + 헤더(누계) 1행 + 다음 1행
-    addRow = Table(1, ThisWeek) + 2
+    addRow = Table(1, addWeek) + 2
     
     ' 추가할 행이 테이블의 끝을 벗어나면 배열을 다시 할당
     If addRow >= TableRow Then
@@ -335,10 +340,10 @@ Public Function AddProjectEntry(Table As Variant, TableRow As Integer, ThisWeek 
     End If
     
     ' 프로젝트 ID를 Table의 next 위치에 추가
-    Table(addRow, ThisWeek) = ProjectID
+    Table(addRow, addWeek) = ProjectID
     
     ' 첫 번째 행의 값을 1 증가시켜 누계를 업데이트
-    Table(1, ThisWeek) = Table(1, ThisWeek) + 1
+    Table(1, addWeek) = Table(1, addWeek) + 1
     
     ' 최종 변경된 행의 크기를 반환
     AddProjectEntry = TableRow
@@ -516,8 +521,8 @@ Function IsEnoughHR(ThisWeek As Integer, cProject As clsProject) As Boolean
         
         'activity 시작시간을 시뮬레이션의 절대 시간으로 변경
         'song 리드타임을 고려하자
-        actStart = ThisWeek + activity.startDate - 1
-        actEnd = actStart + activity.duration - 1
+        actStart = activity.startDate
+        actEnd = activity.EndDate
         
         ' activity의 수행 기간동안
         For j = actStart To actEnd
@@ -593,8 +598,8 @@ Function AddProjectHR(ThisWeek As Integer, cProject As clsProject)
         activity = GetProjectActivity(cProject, index)
         
         'activity 시작시간을 시뮬레이션의 절대 시간으로 변경
-        actStart = ThisWeek + activity.startDate - 1
-        actEnd = actStart + activity.duration - 1
+        actStart = activity.startDate
+        actEnd = activity.EndDate
         
         ' 프로젝트 시작 시점부터 activity의 수행 기간동안
         For j = actStart To actEnd
