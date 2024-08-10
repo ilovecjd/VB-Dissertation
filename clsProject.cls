@@ -254,19 +254,19 @@ Public Sub CreateActivities()
 
         If index = 1 Then
             activities(index).duration = tempDuration
-            activities(index).startDate = 1
-            activities(index).EndDate = tempDuration
+            activities(index).startDate = possiblestartDate '1
+            activities(index).EndDate = possiblestartDate - 1 + tempDuration
         ElseIf index = 2 Then
             activities(index).duration = totalDuration - activities(1).duration
             activities(index).startDate = activities(1).EndDate + 1
-            activities(index).EndDate = totalDuration
+            activities(index).EndDate = possiblestartDate - 1 + totalDuration
         ElseIf index = 3 Then
-            activities(index).duration = tempDuration
-            activities(index).startDate = totalDuration - tempDuration
-            activities(index).EndDate = totalDuration
+            activities(index).duration = tempDuration '3
+            activities(index).startDate = possiblestartDate - 1 + totalDuration - tempDuration + 1
+            activities(index).EndDate = possiblestartDate - 1 + totalDuration
         Else
             activities(index).duration = tempDuration
-            activities(index).startDate = activities(3).startDate - tempDuration - 1
+            activities(index).startDate = activities(3).startDate - tempDuration
             activities(index).EndDate = activities(3).startDate - 1
         End If
     Next index

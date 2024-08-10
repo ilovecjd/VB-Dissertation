@@ -50,7 +50,7 @@ Public gPrintDurationTable() As Variant ' 매번 생성해도 시간차이 없을듯..
 
 Public Type Environment_
     SimulationWeeks As Integer
-    maxTableSize    As Integer ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
+    Hr_TableSize    As Integer ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
     WeeklyProb      As Double
     Hr_Init_H       As Integer
     Hr_Init_M       As Integer
@@ -229,20 +229,20 @@ End Function
 
 ' 발생한 프로젝트의 갯수를 테이블에 기록한다.
 Public Function CreateOrderTable()
-    Dim week As Integer
+    Dim Week As Integer
     Dim projectCount As Integer
     Dim sum As Integer
     
     ReDim gOrderTable(2, GlobalEnv.SimulationWeeks)
 
-    For week = 1 To GlobalEnv.SimulationWeeks
+    For Week = 1 To GlobalEnv.SimulationWeeks
         projectCount = PoissonRandom(GlobalEnv.WeeklyProb)        ' 이번주 발생하는 프로젝트 갯수
-        gOrderTable(1, week) = sum
-        gOrderTable(2, week) = projectCount
+        gOrderTable(1, Week) = sum
+        gOrderTable(2, Week) = projectCount
         
         ' 이번주 까지 발생한 프로젝트 갯수. 다음주에 기록된다. ==> 이전주까지 발생한 프로젝트 갯수후위연산. vba에서 do while 문법 모름... ㅎㅎ
         sum = sum + projectCount
-    Next week
+    Next Week
 
     gTotalProjectNum = sum
     
@@ -254,7 +254,7 @@ End Function
 ' 프로젝트를 생성하고
 Public Function CreateProjects()
 
-    Dim week As Integer
+    Dim Week As Integer
     Dim Id As Integer
     Dim startPrjNum As Integer
     Dim endPrjNum As Integer
@@ -273,10 +273,10 @@ Public Function CreateProjects()
     MainForm.ProgressBar1.Min = 0
     MainForm.ProgressBar1.Text = "프로젝트 생성중"
     
-    For week = 1 To GlobalEnv.SimulationWeeks
-        preTotal = gOrderTable(1, week)
+    For Week = 1 To GlobalEnv.SimulationWeeks
+        preTotal = gOrderTable(1, Week)
         startPrjNum = preTotal + 1
-        endPrjNum = gOrderTable(2, week) + preTotal
+        endPrjNum = gOrderTable(2, Week) + preTotal
 
         If startPrjNum = 0 Then GoTo Continue
         If startPrjNum > endPrjNum Then GoTo Continue
@@ -284,13 +284,13 @@ Public Function CreateProjects()
         ' 이번 주에 발생한 프로젝트들을 생성하고 초기화 한다.
         For Id = startPrjNum To endPrjNum
             Set tempPrj = New clsProject
-            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, week)
+            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, Week)
             Set gProjectTable(Id) = tempPrj
         Next Id
 
 Continue:
-        MainForm.ProgressBar1.value = week
-    Next week
+        MainForm.ProgressBar1.value = Week
+    Next Week
 End Function
 
 
@@ -471,8 +471,8 @@ Function ClearSheet(ws As Object)
     With ws
         Dim endRow As Long
         Dim endCol As Long
-        endRow = .UsedRange.Rows.count + .UsedRange.Row - 1
-        endCol = .UsedRange.Columns.count + .UsedRange.Column - 1
+        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
+        endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).UnMerge
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).Clear
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).ClearContents
@@ -499,7 +499,7 @@ Function FindRowWithKeyword(ws As Object, keyword As String) As Long
     Dim index As Long
     
     ' 엑셀 워크시트의 마지막 행 구하기
-    lastRow = ws.Cells(ws.Rows.count, 1).End(-4162).Row ' xlUp = -4162
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
 
     ' 1번 열을 순회하며 키워드 찾기
     For index = 1 To lastRow
@@ -517,7 +517,7 @@ Function GetLastColumnValue(ws As Object, rowNumber As Long) As Variant
     Dim lastCol As Long
     
     ' 특정 행의 마지막 열 번호 구하기
-    lastCol = ws.Cells(rowNumber, ws.Columns.count).End(-4159).Column ' xlToLeft = -4159
+    lastCol = ws.Cells(rowNumber, ws.Columns.Count).End(-4159).Column ' xlToLeft = -4159
 
     ' 마지막 열의 값 반환
     GetLastColumnValue = ws.Cells(rowNumber, lastCol).value

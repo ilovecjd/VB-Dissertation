@@ -36,6 +36,8 @@ Private totalHR_L_Table()  As Integer  ' 기간별로 회사가 보유한 초급자
  
 Public companyID As Integer ' 회사 이름
 
+Public sample As Integer
+
 
 Private Const MAX_CANDIDATES As Integer = 50 ' SONG 임의로 지정. 동적으로 변하게 할 필요까지는 없어 보임.
 
@@ -513,10 +515,11 @@ Function IsEnoughHR(ThisWeek As Integer, cProject As clsProject) As Boolean
         activity = GetProjectActivity(cProject, index)
         
         'activity 시작시간을 시뮬레이션의 절대 시간으로 변경
+        'song 리드타임을 고려하자
         actStart = ThisWeek + activity.startDate - 1
         actEnd = actStart + activity.duration - 1
         
-        ' 프로젝트 시작 시점부터 activity의 수행 기간동안
+        ' activity의 수행 기간동안
         For j = actStart To actEnd
             
             ' activity의 필요한 인력을 임시 테이블에 추가한다.

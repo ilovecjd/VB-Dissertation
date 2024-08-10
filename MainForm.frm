@@ -310,7 +310,7 @@ Private Sub btnGenBoardNProject_Click()
     ' 입력값들을 업데이트 한다.
     ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
     GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-    GlobalEnv.maxTableSize = txtSimulationWeeks.Text + 80
+    GlobalEnv.Hr_TableSize = txtSimulationWeeks.Text + 80
     GlobalEnv.WeeklyProb = txtWeeklyProb.Text
     GlobalEnv.Hr_Init_H = txtHr_H.Text
     GlobalEnv.Hr_Init_L = txtHr_M.Text
@@ -444,7 +444,7 @@ Sub LoadEnvFromExcel()
     posX = 2: posY = 2: GlobalEnv.SimulationWeeks = .Cells(posY, posX) '156 ' 3년(52주 * 3년)
     
     ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
-    GlobalEnv.maxTableSize = GlobalEnv.SimulationWeeks + 80
+    GlobalEnv.Hr_TableSize = GlobalEnv.SimulationWeeks + 80
     
     posY = posY + 1: GlobalEnv.WeeklyProb = .Cells(posY, posX)
     posY = posY + 1: GlobalEnv.Hr_Init_H = .Cells(posY, posX)
