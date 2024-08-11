@@ -250,6 +250,7 @@ Private Sub Form_Load()
     Call LoadEnvFromExcel
         
     ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
+    gDebugInfoEnable = True
     gProjectLoadOrCreate = LoadOrCreate.Load
     Option_Load.value = True
 
@@ -429,6 +430,7 @@ Public Sub ModifyExcel()
     Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
     Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
     Set gWsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
+    Set gWsDebugInfo = xlWb.Sheets(DEBUGINFO_SHEET_NAME)
     
 End Sub
 
@@ -469,7 +471,6 @@ Private Sub WriteLog(status As String)
     Close #fileNum
     
 End Sub
-    
 
 
 ' 프로그램 실행 이전의 data.xlsm 파일의 Open /Close 상태를 확인한다.
@@ -577,6 +578,7 @@ Private Sub Run_Click()
     
     For index = 1 To GlobalEnv.SimulationWeeks
         Call Company.Decision(index)    ' i번째 기간에 결정해야 할 일들
+        Call Company.PrintDebugInfo(index)
         'Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
         'Call PrintSimulationResults(Company)
     Next

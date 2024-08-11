@@ -10,14 +10,17 @@ Public gWsParameters        As Object   ' Parameters 시트 객체
 Public gWsDashboard         As Object   ' Dashboard 시트 객체
 Public gWsProject           As Object   ' Project 시트 객체
 Public gWsActivity_Struct   As Object   ' Activity_Struct 시트 객체
+Public gWsDebugInfo         As Object   ' dbuginfo 시트 객체
 
 Public Const PARAMETERS_SHEET_NAME = "parameters"
 Public Const DBOARD_SHEET_NAME = "dashboard"
 Public Const PROJECT_SHEET_NAME = "project"
 Public Const ACTIVITY_SHEET_NAME = "activity_struct"
+Public Const DEBUGINFO_SHEET_NAME = "debuginfo"
 
 Public GCurrentPath As String
 Public gProjectLoadOrCreate As Integer ' 프로그램 시작시 프로젝트를 생성할지 기존 데이터를 로드할지 결정하는 변수
+Public gDebugInfoEnable As Boolean ' 디버깅 정보를 출력할지 말지 결정하는 변수
 
 Public Const P_TYPE_EXTERNAL = 0
 Public Const P_TYPE_INTERNAL = 1
