@@ -49,7 +49,7 @@ Public gTotalProjectNum As Integer
 Public GlobalEnv As Environment_
 Public gOrderTable() As Variant 'GlobalEnv 에 포함 여부 체크 필요
 Public gProjectTable() As clsProject ' 필요한가??
-Public gPrintDurationTable() As Variant ' 매번 생성해도 시간차이 없을듯..
+Public gWeekNumberTable() As Integer
 
 Public Type Environment_
     SimulationWeeks As Integer

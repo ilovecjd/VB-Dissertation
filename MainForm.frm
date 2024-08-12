@@ -229,40 +229,32 @@ End Enum
 
 
 
-' 프로그램에서 사용할 기본적인 전역변수들을 설정한다.
-' 파일 존재 여부  / 엑셀 파일 유효성 검사
+' 프로그램의 기본적인 환경변수들을 설정한다.
+' data.xlsm 파일 존재 여부와 유효성 검사
 ' 기본 환경 변수를 어디에서 가져오는가 결정 (엑셀 파일 또는 디폴트 값들)
-' 버튼클릭 시 ==> 기본 환경변수에 기록된 대로 생성 할것인가?? 엑셀에서 로드할 것인가?'
+' 프로젝트는 기본 환경변수에 기록된 대로 새로 생성 또는 data.xlsm파일 에서 로드
 Private Sub Form_Load()
         
     GCurrentPath = App.Path ' 프로그램 및 data.xlsm 파일의 경로
+        
+    gDebugInfoEnable = True ' 디버깅 모드가 디폴트
+    gProjectLoadOrCreate = LoadOrCreate.Load
+    Option_Load.value = True ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
     
     'run_log.txt 파일이 없으면 생성 후 계속 진행, data.xlsm 파일이 없으면 경고 후 프로그램 종료,
     Call CheckFiles
     
-    ' data.xlsm 파일의 WorkSheet Object 들을 설정
+    ' data.xlsm 파일을 열고 WorkSheet Object 들을 설정
     Call ModifyExcel
     
     ' data.xlsm 파일의 parameters와 Dashboard 시트의 내용들에 대한 유효성 체크
-    Call CheckDataFile
+    If Not CheckDataFile Then
+        Exit Sub
+    End If
     
     ' data.xlsm 파일에서 시뮬레이션의 기본설정값들을 가져온다.
     Call LoadEnvFromExcel
-        
-    ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
-    gDebugInfoEnable = True
-    gProjectLoadOrCreate = LoadOrCreate.Load
-    Option_Load.value = True
-
-    ' 화면에 보여줄 초기 값 설정
-    txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
-    txtWeeklyProb.Text = GlobalEnv.WeeklyProb           '1.25
-    txtCash = GlobalEnv.Cash_Init                       '1000
-    txtHr_H = GlobalEnv.Hr_Init_H                       '13
-    txtHr_M = GlobalEnv.Hr_Init_M                       '21
-    txtHr_L = GlobalEnv.Hr_Init_L                       '6
-    txtLeadTime = GlobalEnv.Hr_LeadTime                 '3
-    txtProblemCount = GlobalEnv.ProblemCnt              '100
+    Call SetUserParameters
         
 End Sub
 
@@ -294,6 +286,31 @@ Private Sub Form_Unload(Cancel As Integer)
     
 End Sub
 
+' 입력값들을 업데이트 한다.
+' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
+Private Function GetUsetParameters()
+    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
+    GlobalEnv.Hr_TableSize = txtSimulationWeeks.Text + 80
+    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
+    GlobalEnv.Hr_Init_H = txtHr_H.Text
+    GlobalEnv.Hr_Init_L = txtHr_M.Text
+    GlobalEnv.Hr_Init_M = txtHr_L.Text
+    GlobalEnv.Hr_LeadTime = txtLeadTime.Text
+    GlobalEnv.Cash_Init = txtCash.Text
+    GlobalEnv.ProblemCnt = txtProblemCount.Text
+End Function
+
+' 화면에 보여줄 초기 값 설정
+Private Function SetUserParameters()
+    txtSimulationWeeks.Text = GlobalEnv.SimulationWeeks '156 = 3년(52주 * 3년)
+    txtWeeklyProb.Text = GlobalEnv.WeeklyProb           '1.25
+    txtCash = GlobalEnv.Cash_Init                       '1000
+    txtHr_H = GlobalEnv.Hr_Init_H                       '13
+    txtHr_M = GlobalEnv.Hr_Init_M                       '21
+    txtHr_L = GlobalEnv.Hr_Init_L                       '6
+    txtLeadTime = GlobalEnv.Hr_LeadTime                 '3
+    txtProblemCount = GlobalEnv.ProblemCnt              '100
+End Function
 
 ' 프로젝트들을 생성 한다.
 ' 1. 기존 프로젝트들을 그대로 사용
@@ -307,32 +324,24 @@ Private Sub btnGenBoardNProject_Click()
     
     Dim Res As Integer
     Dim index   As Integer
+    
+    Call GetUsetParameters
+    
+    ReDim gWeekNumberTable(1 To GlobalEnv.SimulationWeeks)
+            
+    For index = 1 To GlobalEnv.SimulationWeeks
+        gWeekNumberTable(index) = index
+    Next index
 
-    ' 입력값들을 업데이트 한다.
-    ' maxTableSize 최대 80주(18개월)간 진행되는 프로젝트를 시뮬레이션 마지막에 기록할 수도 있다.
-    GlobalEnv.SimulationWeeks = txtSimulationWeeks.Text
-    GlobalEnv.Hr_TableSize = txtSimulationWeeks.Text + 80
-    GlobalEnv.WeeklyProb = txtWeeklyProb.Text
-    GlobalEnv.Hr_Init_H = txtHr_H.Text
-    GlobalEnv.Hr_Init_L = txtHr_M.Text
-    GlobalEnv.Hr_Init_M = txtHr_L.Text
-    GlobalEnv.Hr_LeadTime = txtLeadTime.Text
-    GlobalEnv.Cash_Init = txtCash.Text
-    GlobalEnv.ProblemCnt = txtProblemCount.Text
-
-    '1. data.xlsm 파일에 있는 기존 프로젝트들을 그대로 사용
+    '1. data.xlsm 파일에 있는 기존 프로젝트들을 그대로 사용 ' song 추가적인 데이터 유효성 검증필요?
     If gProjectLoadOrCreate = LoadOrCreate.Load Then
     
         Res = MsgBox("기존의 Data.xlsm 파일의 프로젝트들을 그대로 사용 합니다." & vbNewLine & "계속 진행 할가요?", vbYesNo, "기본 환경 설정")
         If (vbNo = Res) Then
-            Exit Sub ' btnGenBoardNProject_Click 함수 종료
+            Exit Sub
         Else
-            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            'gTotalProjectNum = GetLastColumnValue(FindRowWithKeyword("주"))
             
-            ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
-            ' song 파일안의 데이터 유효성 검증을 더 하자.
-            Call LoadTablesFromExcel
+            Call LoadTablesFromExcel ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
         End If 'If (vbNo = Res) Then
         
     '2. 화면에 입력된 값으로 프로젝트를 새롭게 생성
@@ -343,19 +352,11 @@ Private Sub btnGenBoardNProject_Click()
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
             
         Else
-            
-            ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-            
-            For index = 1 To GlobalEnv.SimulationWeeks
-                gPrintDurationTable(index) = index
-            Next index
-        
             Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
             Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
             Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
             Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
             Call PrintProjectAll    ' 프로젝트 전체를 출력한다
-            
         End If  ' If (vbNo = Res) Then
         
     End If  ' If gProjectLoadOrCreate = LoadOrCreate.Load Then

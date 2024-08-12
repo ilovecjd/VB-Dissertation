@@ -161,17 +161,17 @@ Private Function comPrintDashboard()
 
     startRow = 6
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingTable)       ' 내용을 적는다.
 
     startRow = startRow + doingTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doneTable)    ' 내용을 적는다.
 
     startRow = startRow + doneTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, defferTable)      ' 내용을 적는다.
     
 End Function
@@ -705,19 +705,19 @@ Public Function PrintSimulationResults()
     
     ' 진행중인 프로젝트
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingTable)      ' 내용을 적는다.
 
     ' 완료된 프로젝트
     startRow = startRow + doingTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doneTable)       ' 내용을 적는다.
 
     ' 미루어진 프로젝트
     startRow = startRow + doneTableSize + 2
     Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gPrintDurationTable) '기간을 적고
+    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
     Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, defferTable)     ' 내용을 적는다.
 
 
@@ -828,12 +828,12 @@ Private Function GetAllDebugInfo(thisWeek As Integer)
 End Function
 
 ' 테두리를 그린다.
-Public Function DebugPrintLine(top As Integer, bottom As Integer)
+Public Function DebugPrintLine(Top As Integer, Bottom As Integer)
 
     With gWsDebugInfo
     
         Dim rng As Object
-        Set rng = .Range(.Cells(top, 1), .Cells(bottom, GlobalEnv.SimulationWeeks))
+        Set rng = .Range(.Cells(Top, 1), .Cells(Bottom, GlobalEnv.SimulationWeeks))
         rng.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
         rng.Borders.LineStyle = xlContinuous
         
