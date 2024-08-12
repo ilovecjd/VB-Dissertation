@@ -98,6 +98,7 @@ End Sub
 ' 프로젝트, 인력, 자금을 관리할 테이블 생성
 Public Sub Init(Id As Integer)
     
+    Dim index As Integer
     companyID = Id
     
     doingTableSize = 10
@@ -126,9 +127,11 @@ Public Sub Init(Id As Integer)
     ReDim totalHR_M_Table(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 중급자
     ReDim totalHR_L_Table(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 초급자
 
-    totalHR_H_Table(1) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 초기화
-    totalHR_M_Table(1) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
-    totalHR_L_Table(1) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
+    For index = 1 To GlobalEnv.Hr_TableSize
+        totalHR_H_Table(index) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 테이블 초기화
+        totalHR_M_Table(index) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 테이블 초기화
+        totalHR_L_Table(index) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 테이블 초기화
+    Next
 
     ReDim m_AllDashboardInfo(1 To debugArrayHeight, 1 To debugArrayWidth)
     
@@ -562,17 +565,17 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
     ' 코딩 편의상 모든 기간을 체크한다.
     For index = 1 To GlobalEnv.Hr_TableSize
     
-        If tempH_Table(index) > doingHR_H_Table(index) Then
+        If tempH_Table(index) > totalHR_H_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
         
-        If tempM_Table(index) > doingHR_M_Table(index) Then
+        If tempM_Table(index) > totalHR_M_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
         
-        If tempL_Table(index) > doingHR_L_Table(index) Then
+        If tempL_Table(index) > totalHR_L_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
