@@ -436,9 +436,10 @@ Private Sub btnGenBoardNProject_Click()
         Else
             For index = 1 To NUN_OF_COMPANY
                 Call m_Companies(index).CreateProjects      ' 프로젝트 생성
-                Call m_Companies(index).PrintProjectHeader  ' Project 시트의 헤더를 기록한다.
-                Call m_Companies(index).PrintProjectAll     ' 프로젝트 전체를 출력한다
-                Call m_Companies(index).PrintProjectAll     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
+                Call m_Companies(index).PrintCreateProjectResults(m_Companies(index).m_totalProjectNum)      ' 프로젝트 전체를 출력한다
+                'Call m_Companies(index).PrintProjectHeader  ' Project 시트의 헤더를 기록한다.
+                'Call m_Companies(index).PrintProjectAll     ' 프로젝트 전체를 출력한다
+                'Call m_Companies(index).PrintProjectAll     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
             Next
 
         End If  ' If (vbNo = Res) Then

@@ -17,7 +17,7 @@ Option Base 1
 Private m_orderTable()      As Variant  ' 주별 발주 프로젝트의 누계와 주차별 갯수, week 갯수 가변
 Private m_projectTable()    As Variant  ' 발주된 모든 프로젝트 object 를 보관, 가변
 
-Private m_totalProjectNum   As Integer  ' 발주된 프로젝트의 총 갯수
+Public m_totalProjectNum   As Integer  ' 발주된 프로젝트의 총 갯수
 
 
 
@@ -694,8 +694,27 @@ Public Function CreateProjects()
     Next week
 
     m_totalProjectNum = sum
+       
     
+    ''''''''''''''''''''''
+    ' 디버깅 모드 이면 비교를 위해 발주 현황은 출력해 놓는다.
+    If g_ProjDebug Then
+        Dim arrHeader As Variant
+        
+        arrHeader = Array("주", "누계", "발주")
+        arrHeader = PivotArray(arrHeader)
     
+        ReDim tempArray(1 To GlobalEnv.SimulationWeeks) As Integer
+        For cnt = 1 To GlobalEnv.SimulationWeeks
+            tempArray(cnt) = cnt
+        Next
+        Call PrintArrayWithLine(g_WsDashboard, 2, 1, arrHeader)
+        Call PrintArrayWithLine(g_WsDashboard, 2, 2, tempArray)
+        Call PrintArrayWithLine(g_WsDashboard, 3, 2, m_orderTable)
+        
+    End If
+    ' 디버깅 모드 이면 비교를 위해 발주 현황은 출력해 놓는다.
+    ''''''''''''''''''''''
     
     Dim Id As Integer
     Dim startNum As Integer
@@ -727,7 +746,7 @@ Public Function CreateProjects()
         
 Continue:
         MainForm.ProgressBar1.value = week
-        DebugProjectSheet (week)
+        Call DebugProjectSheet(endNum)
         
     Next week
     
@@ -1021,7 +1040,7 @@ Private Function GetAllProjectInfo(projectCnt As Integer)
     Next
     
     ' 프로젝트 정보
-    For index = 1 To projectCnt ' GlobalEnv.SimulationWeeks
+    For index = 1 To projectCnt '
     
         posY = PROJECT_TABLE_INDEX + (index - 1) * PRJ_SHEET_HEADER_H + 1
         Set cProject = m_projectTable(index)
@@ -1061,11 +1080,13 @@ Public Function GetProjectInfomation(posY As Integer, cProject As clsProject)
     posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.finalPayment
 
 
-    posX = 1: posY = 2: m_AllProjectInfo(posY, posX) = cProject.numActivities
+    ' 줄바꿈
+    posX = 1: posY = posY + 1: m_AllProjectInfo(posY, posX) = cProject.numActivities
     posX = posX + 10: m_AllProjectInfo(posY, posX) = cProject.firstPaymentMonth
     posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.middlePaymentMonth
     posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.finalPaymentMonth
-   
+       
+    ' 2열 부터
     For index = 1 To cProject.numActivities
         Dim strAct As String, strNum As String
         strNum = Format(index, "#0")
@@ -1090,37 +1111,38 @@ Public Function GetProjectInfomation(posY As Integer, cProject As clsProject)
 End Function
 
 
-Public Function PrintCreateProjectResults(thisWeek As Integer)
+Public Function PrintCreateProjectResults(projectCnt As Integer)
     
     Dim index As Integer, j As Integer
-    Dim row As Integer
+    Dim printRow As Integer
     
-    row = PROJECT_TABLE_INDEX + m_totalProjectNum * PRJ_SHEET_HEADER_H
+    printRow = PROJECT_TABLE_INDEX + m_totalProjectNum * PRJ_SHEET_HEADER_H
     
-    ReDim m_AllProjectInfo(row, PRJ_SHEET_HEADER_W)
+    ReDim m_AllProjectInfo(printRow, PRJ_SHEET_HEADER_W)
                 
     ' 정보를 모을 배열을 초기화 한다.
-    For index = 1 To row
+    For index = 1 To printRow
         For j = 1 To PRJ_SHEET_HEADER_W
             m_AllProjectInfo(index, j) = ""
         Next
     Next
         
-    Call GetAllProjectInfo(thisWeek) ' 정보를 모은다
+    Call GetAllProjectInfo(projectCnt) ' 정보를 모은다
         
     Call ClearSheet(g_WsProject) ' 시트를 지운다.
         
     With g_WsProject
         
         ' 모은 정보를 시트에 출력한다.
-        .Range(.Cells(1, 1), .Cells(debugArrayHeight, GlobalEnv.SimulationWeeks)).value = m_AllProjectInfo
+        .Range(.Cells(1, 1), .Cells(printRow, PRJ_SHEET_HEADER_W)).value = m_AllProjectInfo
         
         ' 헤더의 테두리를 그린다.
         Call PrintLine(g_WsProject, 1, 1, PRJ_SHEET_HEADER_W, 2, False)
         
+        Dim projectRow As Integer
         For index = 1 To m_totalProjectNum
-            row = PROJECT_TABLE_INDEX + 1 + (index - 1) * PRJ_SHEET_HEADER_H ' 헤더사이즈 + 공간 1 + project 정보의 크기
-            Call PrintLine(g_WsProject, 1, row, PRJ_SHEET_HEADER_W, row + PRJ_SHEET_HEADER_H - 1, True)
+            projectRow = PROJECT_TABLE_INDEX + 1 + PRJ_SHEET_HEADER_H * (index - 1) ' 3칸+공간1 + 정보의 크기
+            Call PrintLine(g_WsProject, 1, projectRow, PRJ_SHEET_HEADER_W, projectRow + PRJ_SHEET_HEADER_H - 1, True)
         Next
         
     End With
@@ -1128,12 +1150,12 @@ Public Function PrintCreateProjectResults(thisWeek As Integer)
 End Function
 
 
-Public Function DebugProjectSheet(thisWeek As Integer)
+Public Function DebugProjectSheet(projectCnt As Integer)
 
     If Not g_ProjDebug Then
        Exit Function
     End If
     
-    Call PrintCreateProjectResults(thisWeek)
+    Call PrintCreateProjectResults(projectCnt)
     
 End Function
