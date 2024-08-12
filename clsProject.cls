@@ -16,75 +16,83 @@ Option Base 1
 
 
 ' 프로젝트 속성
-Public projectType          As Integer  ' 프로젝트 타입 (0: 외부 / 1: 내부)
-Public projectNum           As Integer  ' 프로젝트의 번호
+Public projectType              As Integer  ' 프로젝트 타입 (0: 외부 / 1: 내부)
+Public projectNum               As Integer  ' 프로젝트의 번호
 
-Public orderDate            As Integer  ' 발주일
-Public possiblestartDate    As Integer  ' 시작 가능일
-Public endDate              As Integer  ' 프로젝트 종료일
-Public projectDuration      As Integer  ' 프로젝트의 총 기간
-Public startDate            As Integer  ' 시작일 (0: 미시작)
-Public profit               As Double   ' 총 기대 수익 (HR 종속)
-Public experience           As Integer  ' 경험 (0: 무경험 1: 유경험)
-Public successProbability   As Integer  ' 성공 확률
+Public orderDate                As Integer  ' 발주일
+Public possiblestartDate        As Integer  ' 시작 가능일
+Public endDate                  As Integer  ' 프로젝트 종료일
+Public projectDuration          As Integer  ' 프로젝트의 총 기간
+Public startDate                As Integer  ' 시작일 (0: 미시작)
+Public profit                   As Double   ' 총 기대 수익 (HR 종속)
+Public experience               As Integer  ' 경험 (0: 무경험 1: 유경험)
+Public successProbability       As Integer  ' 성공 확률
 
 ' 현금 흐름
-Public numCashFlows         As Integer  ' 비용 지급 횟수
-Private cashFlows()         As Integer  ' 용역비를 받는 비율을 기록하는 배열
-Public firstPayment         As Long     ' 선금 액수
-Public middlePayment        As Long     ' 2차 지급 액수
-Public finalPayment         As Long     ' 3차 지급 액수
-Public firstPaymentMonth    As Integer  ' 선금 지급일
-Public middlePaymentMonth   As Integer  ' 2차 지급일
-Public finalPaymentMonth    As Integer  ' 3차 지급일`
+Public numCashFlows             As Integer  ' 비용 지급 횟수
+Private m_cashFlows(MAX_N_CF)   As Integer  ' 용역비를 받는 비율을 기록하는 배열
+Public firstPayment             As Long     ' 선금 액수
+Public middlePayment            As Long     ' 2차 지급 액수
+Public finalPayment             As Long     ' 3차 지급 액수
+Public firstPaymentMonth        As Integer  ' 선금 지급일
+Public middlePaymentMonth       As Integer  ' 2차 지급일
+Public finalPaymentMonth        As Integer  ' 3차 지급일`
 
 ' 활동
-Public numActivities As Integer ' 총 활동 수
-Private activities() As Activity_  ' 활동에 관한 정보를 기록하는 배열
-Private activityAttribute() As Variant ' activity_struct 시트에서 프로젝트 속성을 읽어올 배열
-Private activityPattern() As Variant ' activity_struct 시트에서 패턴 속성을 읽어올 배열
+Public numActivities            As Integer ' 총 활동 수
+Private m_activities(MAX_ACT)   As Activity_  ' 활동에 관한 정보를 기록하는 배열
+Private activityAttribute()     As Variant ' activity_struct 시트에서 프로젝트 속성을 읽어올 배열
+Private activityPattern()       As Variant ' activity_struct 시트에서 패턴 속성을 읽어올 배열
 '
-'Public Function GetActivity(actNum As Integer) As Variant
-'    ' song 예외처리 코드 필요 (갯수 넘지 않게)
-'    GetActivity = activities(actNum)
+
+
+' 활동의 ActivityType 반환하는 함수
+'Public Function SetActivity(index As Integer, activity As Activity_)
+'
+'    m_activities(index).activityType = activityType
+'    m_activities(index).duration = activity.duration
+'    m_activities(index).startDate = activity.startDate
+'    m_activities(index).endDate = activity.endDate
+'    m_activities(index).highSkill = activity.highSkill
+'    m_activities(index).midSkill = activity.midSkill
+'    m_activities(index).lowSkill = activity.lowSkill
+'
 'End Function
 
 
 
-' 활동의 ActivityType 반환하는 함수
-
 Public Function GetActivityActivityType(index As Integer) As Integer
-    GetActivityActivityType = activities(index).ActivityType
+    GetActivityActivityType = m_activities(index).activityType
 End Function
 
 ' 활동의 Duration을 반환하는 함수
 Public Function GetActivityDuration(index As Integer) As Integer
-    GetActivityDuration = activities(index).duration
+    GetActivityDuration = m_activities(index).duration
 End Function
 
 ' 활동의 startDate를 반환하는 함수
 Public Function GetActivitystartDate(index As Integer) As Integer
-    GetActivitystartDate = activities(index).startDate
+    GetActivitystartDate = m_activities(index).startDate
 End Function
 
 ' 활동의 EndDate를 반환하는 함수
 Public Function GetActivityEndDate(index As Integer) As Integer
-    GetActivityEndDate = activities(index).endDate
+    GetActivityEndDate = m_activities(index).endDate
 End Function
 
 ' 활동의 HighSkill을 반환하는 함수
 Public Function GetActivityHighSkill(index As Integer) As Integer
-    GetActivityHighSkill = activities(index).HighSkill
+    GetActivityHighSkill = m_activities(index).highSkill
 End Function
 
 ' 활동의 MidSkill을 반환하는 함수
 Public Function GetActivityMidSkill(index As Integer) As Integer
-    GetActivityMidSkill = activities(index).MidSkill
+    GetActivityMidSkill = m_activities(index).midSkill
 End Function
 
 ' 활동의 LowSkill을 반환하는 함수
 Public Function GetActivityLowSkill(index As Integer) As Integer
-    GetActivityLowSkill = activities(index).LowSkill
+    GetActivityLowSkill = m_activities(index).lowSkill
 End Function
 
 
@@ -92,61 +100,92 @@ End Function
 
 ' 활동의 ActivityType 설정
 Public Sub SetActivityActivityType(index As Integer, value As Integer)
-    activities(index).ActivityType = value
+    m_activities(index).activityType = value
 End Sub
  
 ' 활동의 Duration 설정
 Public Sub SetActivityDuration(index As Integer, value As Integer)
-    activities(index).duration = value
+    m_activities(index).duration = value
 End Sub
 
 ' 활동의 startDate 설정
 Public Sub SetActivitystartDate(index As Integer, value As Integer)
-    activities(index).startDate = value
+    m_activities(index).startDate = value
 End Sub
 
 ' 활동의 EndDate 설정
 Public Sub SetActivityEndDate(index As Integer, value As Integer)
-    activities(index).endDate = value
+    m_activities(index).endDate = value
 End Sub
 
 ' 활동의 HighSkill 설정
 Public Sub SetActivityHighSkill(index As Integer, value As Integer)
-    activities(index).HighSkill = value
+    m_activities(index).highSkill = value
 End Sub
 
 ' 활동의 MidSkill 설정
 Public Sub SetActivityMidSkill(index As Integer, value As Integer)
-    activities(index).MidSkill = value
+    m_activities(index).midSkill = value
 End Sub
 
 ' 활동의 LowSkill 설정
 Public Sub SetActivityLowSkill(index As Integer, value As Integer)
-    activities(index).LowSkill = value
+    m_activities(index).lowSkill = value
 End Sub
 
-Public Property Get PrjcashFlows() As Integer()
-    PrjcashFlows = cashFlows
-End Property
 
-Public Property Get PrjActivities() As Integer()
-    'PrjActivities = Activities
-End Property
 
-'Public Sub SetPrjActivities(i As Integer, Value As Activity)
- '   Activities(i) = Value
-'End Sub
+Public Function CopyToCashFlows(value() As Integer)
 
-Public Sub SetPrjcashFlows(value() As Integer)
-    cashFlows = value
-End Sub
+    Dim index As Integer
+    
+    For index = 1 To MAX_N_CF
+        m_cashFlows(index) = value(index)
+    Next
+    
+End Function
 
-Private Sub Class_Initialize()
-    'ReDim projectInfo(1 To PRJ_SHEET_HEADER_H, 1 To PRJ_SHEET_HEADER_W)
-       
-    ReDim cashFlows(1 To MAX_N_CF)
-    ReDim activities(1 To MAX_ACT)
-End Sub
+
+Public Function CopyFromCashFlows(value() As Integer)
+
+    Dim index As Integer
+    
+    For index = 1 To MAX_N_CF
+        value(index) = m_cashFlows(index)
+    Next
+    
+End Function
+
+
+'Public Function CopyToActivities(actNum As Integer, value As Variant)
+'
+'    m_activities(actNum).activityType = value.activityType
+'
+'    m_activities(actNum).duration = value.duration
+'    m_activities(actNum).startDate = value.startDate
+'    m_activities(actNum).endDate = value.endDate
+'
+'    m_activities(actNum).highSkill = value.highSkill
+'    m_activities(actNum).midSkill = value.midSkill
+'    m_activities(actNum).lowSkill = value.lowSkill
+'
+'End Function
+
+'
+'Public Function CopyFromActivities(actNum As Integer, value As Activity_)
+'
+'    value.activityType = m_activities(actNum).activityType
+'
+'    value.duration = m_activities(actNum).duration
+'    value.startDate = m_activities(actNum).startDate
+'    value.endDate = m_activities(actNum).endDate
+'
+'    value.highSkill = m_activities(actNum).highSkill
+'    value.midSkill = m_activities(actNum).midSkill
+'    value.lowSkill = m_activities(actNum).lowSkill
+'
+'End Function
+
 
 ' Desc     : Project 클래스의 초기화
 ' initType : 프로젝트 타입 (0: 외부 / 1: 내부)
@@ -178,7 +217,7 @@ Public Sub SetProjectEnv()
     ReDim activityAttribute(1 To 5, 1 To 14)
     ReDim activityPattern(1 To 6, 1 To 27)
 
-    With gWsActivity_Struct
+    With g_WsActivity_Struct
         activityAttribute = .Range(.Cells(3, 1), .Cells(7, 14)).value
         activityPattern = .Range(.Cells(15, 1), .Cells(20, 27)).value
     End With
@@ -255,21 +294,21 @@ Public Sub CreateActivities()
         End If
 
         If index = 1 Then
-            activities(index).duration = tempDuration
-            activities(index).startDate = possiblestartDate '1
-            activities(index).endDate = possiblestartDate - 1 + tempDuration
+            m_activities(index).duration = tempDuration
+            m_activities(index).startDate = possiblestartDate '1
+            m_activities(index).endDate = possiblestartDate - 1 + tempDuration
         ElseIf index = 2 Then
-            activities(index).duration = totalDuration - activities(1).duration
-            activities(index).startDate = activities(1).endDate + 1
-            activities(index).endDate = possiblestartDate - 1 + totalDuration
+            m_activities(index).duration = totalDuration - m_activities(1).duration
+            m_activities(index).startDate = m_activities(1).endDate + 1
+            m_activities(index).endDate = possiblestartDate - 1 + totalDuration
         ElseIf index = 3 Then
-            activities(index).duration = tempDuration '3
-            activities(index).startDate = possiblestartDate - 1 + totalDuration - tempDuration + 1
-            activities(index).endDate = possiblestartDate - 1 + totalDuration
+            m_activities(index).duration = tempDuration '3
+            m_activities(index).startDate = possiblestartDate - 1 + totalDuration - tempDuration + 1
+            m_activities(index).endDate = possiblestartDate - 1 + totalDuration
         Else
-            activities(index).duration = tempDuration
-            activities(index).startDate = activities(3).startDate - tempDuration
-            activities(index).endDate = activities(3).startDate - 1
+            m_activities(index).duration = tempDuration
+            m_activities(index).startDate = m_activities(3).startDate - tempDuration
+            m_activities(index).endDate = m_activities(3).startDate - 1
         End If
     Next index
 End Sub
@@ -296,18 +335,18 @@ Public Sub CalculateHRandprofit()
     For index = 1 To numActivities
         j = Int(Rnd() * 100)
         If (0 < j) And (j <= RND_HR_H) Then
-            activities(index).HighSkill = 1
+            m_activities(index).highSkill = 1
         ElseIf (RND_HR_H < j) And (j <= RND_HR_M) Then
-            activities(index).MidSkill = 1
+            m_activities(index).midSkill = 1
         Else
-            activities(index).LowSkill = 1
+            m_activities(index).lowSkill = 1
         End If
     Next index
 
     For index = 1 To numActivities
-        high = high + activities(index).HighSkill * activities(index).duration
-        mid = mid + activities(index).MidSkill * activities(index).duration
-        low = low + activities(index).LowSkill * activities(index).duration
+        high = high + m_activities(index).highSkill * m_activities(index).duration
+        mid = mid + m_activities(index).midSkill * m_activities(index).duration
+        low = low + m_activities(index).lowSkill * m_activities(index).duration
     Next index
 
     profit = CalculateTotalLaborCost(high, mid, low)
@@ -369,11 +408,11 @@ Public Sub CalculatePaymentSchedule()
 
         Select Case paymentType
             Case 1
-                firstPayment = profit * 0.3: cashFlows(1) = 30: cashFlows(2) = 70
+                firstPayment = profit * 0.3: m_cashFlows(1) = 30: m_cashFlows(2) = 70
             Case 2
-                firstPayment = profit * 0.4: cashFlows(1) = 40: cashFlows(2) = 60
+                firstPayment = profit * 0.4: m_cashFlows(1) = 40: m_cashFlows(2) = 60
             Case 3
-                firstPayment = profit * 0.5: cashFlows(1) = 50: cashFlows(2) = 50
+                firstPayment = profit * 0.5: m_cashFlows(1) = 50: m_cashFlows(2) = 50
         End Select
 
         middlePayment = profit - firstPayment
@@ -386,11 +425,11 @@ Public Sub CalculatePaymentSchedule()
             paymentRatio = Int(3 * Rnd + 1)
             Select Case paymentRatio
                 Case 1
-                    firstPayment = profit * 0.3: cashFlows(1) = 30: cashFlows(2) = 70
+                    firstPayment = profit * 0.3: m_cashFlows(1) = 30: m_cashFlows(2) = 70
                 Case 2
-                    firstPayment = profit * 0.4: cashFlows(1) = 40: cashFlows(2) = 60
+                    firstPayment = profit * 0.4: m_cashFlows(1) = 40: m_cashFlows(2) = 60
                 Case 3
-                    firstPayment = profit * 0.5: cashFlows(1) = 50: cashFlows(2) = 50
+                    firstPayment = profit * 0.5: m_cashFlows(1) = 50: m_cashFlows(2) = 50
             End Select
             middlePayment = profit - firstPayment
             totalPayments = 2
@@ -400,15 +439,15 @@ Public Sub CalculatePaymentSchedule()
             If paymentRatio <= 6 Then
                 firstPayment = profit * 0.3
                 middlePayment = profit * 0.3
-                cashFlows(1) = 30
-                cashFlows(2) = 30
-                cashFlows(3) = 40
+                m_cashFlows(1) = 30
+                m_cashFlows(2) = 30
+                m_cashFlows(3) = 40
             Else
                 firstPayment = profit * 0.3
                 middlePayment = profit * 0.4
-                cashFlows(1) = 30
-                cashFlows(2) = 40
-                cashFlows(3) = 30
+                m_cashFlows(1) = 30
+                m_cashFlows(2) = 40
+                m_cashFlows(3) = 30
             End If
 
             finalPayment = profit - firstPayment - middlePayment
@@ -421,9 +460,9 @@ Public Sub CalculatePaymentSchedule()
         middlePayment = profit * 0.4
         finalPayment = profit - firstPayment - middlePayment
 
-        cashFlows(1) = 30
-        cashFlows(2) = 40
-        cashFlows(3) = 30
+        m_cashFlows(1) = 30
+        m_cashFlows(2) = 40
+        m_cashFlows(3) = 30
 
         totalPayments = 3
         middlePaymentMonth = WorksheetFunction.Ceiling(projectDuration / 2, 1)
@@ -467,25 +506,9 @@ Public Sub PrintProjectInfomation()
     posX = posX + 1: projectInfo(posY, posX) = experience
     posX = posX + 1: projectInfo(posY, posX) = successProbability
     posX = posX + 1: projectInfo(posY, posX) = numCashFlows
-
-    
-    'posX = 1: posY = 1: projectInfo(posY, posX) = projectType
-'    posX = posX + 1: projectInfo(posY, posX) = projectNum
-'    posX = posX + 1: projectInfo(posY, posX) = orderDate
-'    posX = posX + 1: projectInfo(posY, posX) = possiblestartDate
-'    posX = posX + 1: projectInfo(posY, posX) = projectDuration
-'    posX = posX + 1: projectInfo(posY, posX) = startDate
-'    posX = posX + 1: projectInfo(posY, posX) = profit
-'    posX = posX + 1: projectInfo(posY, posX) = experience
-'    posX = posX + 1: projectInfo(posY, posX) = successProbability
-'    posX = posX + 1: projectInfo(posY, posX) = numCashFlows
-    
-    
-    
-    
     
     For index = 1 To MAX_N_CF
-        posX = posX + 1: projectInfo(posY, posX) = cashFlows(index)
+        posX = posX + 1: projectInfo(posY, posX) = m_cashFlows(index)
     Next index
 
     posX = posX + 1: projectInfo(posY, posX) = firstPayment
@@ -511,20 +534,20 @@ Public Sub PrintProjectInfomation()
         strAct = "Activity" & strNum
 
         posX = 2:        projectInfo(posY, posX) = strAct
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).duration
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).startDate
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).endDate
+        posX = posX + 1: projectInfo(posY, posX) = m_activities(index).duration
+        posX = posX + 1: projectInfo(posY, posX) = m_activities(index).startDate
+        posX = posX + 1: projectInfo(posY, posX) = m_activities(index).endDate
         
-        posX = posX + 2: projectInfo(posY, posX) = activities(index).HighSkill
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).MidSkill
-        posX = posX + 1: projectInfo(posY, posX) = activities(index).LowSkill
+        posX = posX + 2: projectInfo(posY, posX) = m_activities(index).highSkill
+        posX = posX + 1: projectInfo(posY, posX) = m_activities(index).midSkill
+        posX = posX + 1: projectInfo(posY, posX) = m_activities(index).lowSkill
         
         posY = posY + 1
     Next index
 
     posY = (projectNum - 1) * PRJ_SHEET_HEADER_H + 4
 
-    With gWsProject
+    With g_WsProject
     
         Dim RNG1 As Object
         Set RNG1 = .Range(.Cells(posY, 1), .Cells(posY + PRJ_SHEET_HEADER_H - 1, PRJ_SHEET_HEADER_W))
@@ -537,8 +560,4 @@ Public Sub PrintProjectInfomation()
         
     End With
 End Sub
-
-
-
-
 

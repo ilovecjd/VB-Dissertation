@@ -6,11 +6,11 @@ Option Base 1
 Public xlApp                As Object   ' 엑셀 애플리케이션 객체
 Public xlWb                 As Object   ' 엑셀 워크북 객체
 
-Public gWsParameters        As Object   ' Parameters 시트 객체
-Public gWsDashboard         As Object   ' Dashboard 시트 객체
-Public gWsProject           As Object   ' Project 시트 객체
-Public gWsActivity_Struct   As Object   ' Activity_Struct 시트 객체
-Public gWsDebugInfo         As Object   ' dbuginfo 시트 객체
+Public g_WsParameters        As Object   ' Parameters 시트 객체
+Public g_WsDashboard         As Object   ' Dashboard 시트 객체
+Public g_WsProject           As Object   ' Project 시트 객체
+Public g_WsActivity_Struct   As Object   ' Activity_Struct 시트 객체
+Public g_WsDebugInfo         As Object   ' dbuginfo 시트 객체
 
 Public Const PARAMETERS_SHEET_NAME = "parameters"
 Public Const DBOARD_SHEET_NAME = "dashboard"
@@ -20,7 +20,8 @@ Public Const DEBUGINFO_SHEET_NAME = "debuginfo"
 
 Public GCurrentPath As String
 Public gProjectLoadOrCreate As Integer ' 프로그램 시작시 프로젝트를 생성할지 기존 데이터를 로드할지 결정하는 변수
-Public gDebugInfoEnable As Boolean ' 디버깅 정보를 출력할지 말지 결정하는 변수
+Public g_SimulDebug As Boolean  ' 시뮬레이션 결과를 디버깅 정보로 출력할지 말지 결정하는 변수
+Public g_ProjDebug As Boolean   ' 프로젝트 생성 결과를 디버깅 정보로 출력할지 말지 결정하는 변수
 
 Public Const P_TYPE_EXTERNAL = 0
 Public Const P_TYPE_INTERNAL = 1
@@ -61,16 +62,17 @@ Public Type Environment_
     Hr_LeadTime     As Integer
     Cash_Init       As Integer
     ProblemCnt      As Integer
+    status          As Integer  ' 프로그램의 동작 상태. 0:프로젝트 미생성, 1:프로젝트 생성,
 End Type
 
 Public Type Activity_
-    ActivityType    As Integer
+    activityType    As Integer
     duration        As Integer
     startDate       As Integer
     endDate         As Integer
-    HighSkill       As Integer
-    MidSkill        As Integer
-    LowSkill        As Integer
+    highSkill       As Integer
+    midSkill        As Integer
+    lowSkill        As Integer
 End Type
 
 Public Property Get GetExcelEnv() As Environment_
@@ -105,147 +107,25 @@ Public Property Get GetProjectTable() As Variant
     GetProjectTable = gProjectTable
 End Property
 
-' 전역적으로 사용하는 테이블들을 채운다.
-Sub Prologue(TableInit As Integer)
-
-    Dim index As Integer
-    
-    If gExcelInitialized = False Then
-
-        ReDim gPrintDurationTable(1 To GlobalEnv.SimulationWeeks)
-        For index = 1 To GlobalEnv.SimulationWeeks
-            gPrintDurationTable(index) = index
-        Next index
-
-        gExcelInitialized = True
-    End If
-    
-    ' 테이블들은 새로 생성하거나 기존것을 로드하거나.
-    ' 예외 처리는 하지말고 사용자가 조심해서 사용하도록 하자.
-    gTableInitialized = (TableInit = 1)
-    
-    If gTableInitialized = False Then
-        'Call BuildTables ' 테이블을 새로 생성하고 엑셀에 기록한다.
-        
-        Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
-        Call CreateProjects     ' 프로젝트를 생성한다.
-        
-    Else
-        Call LoadTablesFromExcel ' 엑셀에 기록된 값들로 테이블을 채운다.
-    End If
-
-    gTableInitialized = True
-    
-End Sub
-
-' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
-Sub LoadTablesFromExcel()
-    Call LoadOrderTable
-    Call LoadProjects
-End Sub
 
 
-Private Function LoadOrderTable() As Boolean
-    
-    Dim startIndex As Long
-    
-    startIndex = ORDER_TABLE_INDEX + 2
-    
-    ReDim gOrderTable(2, GlobalEnv.SimulationWeeks)
-    
-    With gWsDashboard
-        gOrderTable = .Range(.Cells(startIndex, 2), .Cells(startIndex + 1, GlobalEnv.SimulationWeeks + 1)).value
-    End With
-
-    gTotalProjectNum = gOrderTable(1, GlobalEnv.SimulationWeeks) + gOrderTable(2, GlobalEnv.SimulationWeeks)
-    
-End Function
-
-' data.xlsm 파일에서 프로젝트를 읽어들인다.
-Private Function LoadProjects() As Boolean
-
-    Dim prjID As Integer
-    Dim startRow As Long
-    Dim endRow As Long
-    Dim prjInfo As Variant
-    Dim tempPrj As clsProject
-
-    ReDim gProjectTable(gTotalProjectNum)
-
-    For prjID = 1 To gTotalProjectNum
-    
-        ' 프로젝트 생성 및 설정
-        Set tempPrj = New clsProject
-        startRow = PROJECT_TABLE_INDEX + (prjID - 1) * PRJ_SHEET_HEADER_H + 1
-        endRow = startRow + PRJ_SHEET_HEADER_H - 1
-
-        With gWsProject
-            prjInfo = .Range(.Cells(startRow, 1), .Cells(endRow, PRJ_SHEET_HEADER_W)).value
-        End With
-
-        tempPrj.projectType = prjInfo(1, 1)
-        tempPrj.projectNum = prjInfo(1, 2)
-        tempPrj.projectDuration = prjInfo(1, 3)
-        tempPrj.possiblestartDate = prjInfo(1, 4)
-        tempPrj.endDate = prjInfo(1, 5)
-        tempPrj.orderDate = prjInfo(1, 6)
-        tempPrj.profit = prjInfo(1, 7)
-        tempPrj.experience = prjInfo(1, 8)
-        tempPrj.successProbability = prjInfo(1, 9)
-        
-        ' Cash Folwer 설정
-        Dim tempCF(1 To MAX_N_CF) As Integer
-        Dim index As Integer
-        For index = 1 To MAX_N_CF
-            tempCF(index) = prjInfo(1, 10 + index)
-        Next index
-        tempPrj.SetPrjcashFlows tempCF
-
-        tempPrj.firstPayment = prjInfo(1, 14)
-        tempPrj.middlePayment = prjInfo(1, 15)
-        tempPrj.finalPayment = prjInfo(1, 16)
-
-        tempPrj.numActivities = prjInfo(2, 1)
-        tempPrj.firstPaymentMonth = prjInfo(2, 11)
-        tempPrj.middlePaymentMonth = prjInfo(2, 12)
-        tempPrj.finalPaymentMonth = prjInfo(2, 13)
-        
-        
-        ' Activity 설정. Activity는 메모리 할당 필요!!!!!
-        Dim tempAct As Activity_
-        For index = 1 To tempPrj.numActivities
-            tempAct.duration = prjInfo(1 + index, 3)
-            tempAct.startDate = prjInfo(1 + index, 4)
-            tempAct.endDate = prjInfo(1 + index, 5)
-            tempAct.HighSkill = prjInfo(1 + index, 7)
-            tempAct.MidSkill = prjInfo(1 + index, 8)
-            tempAct.LowSkill = prjInfo(1 + index, 9)
-            Call SetProjectActivity(tempPrj, index, tempAct)
-        Next index
-
-        
-        Set gProjectTable(prjID) = tempPrj
-        
-    Next prjID
-    
-End Function
 
 ' 발생한 프로젝트의 갯수를 테이블에 기록한다.
 Public Function CreateOrderTable()
-    Dim Week As Integer
+    Dim week As Integer
     Dim projectCount As Integer
     Dim sum As Integer
     
     ReDim gOrderTable(2, GlobalEnv.SimulationWeeks)
 
-    For Week = 1 To GlobalEnv.SimulationWeeks
+    For week = 1 To GlobalEnv.SimulationWeeks
         projectCount = PoissonRandom(GlobalEnv.WeeklyProb)        ' 이번주 발생하는 프로젝트 갯수
-        gOrderTable(1, Week) = sum
-        gOrderTable(2, Week) = projectCount
+        gOrderTable(1, week) = sum
+        gOrderTable(2, week) = projectCount
         
         ' 이번주 까지 발생한 프로젝트 갯수. 다음주에 기록된다. ==> 이전주까지 발생한 프로젝트 갯수후위연산. vba에서 do while 문법 모름... ㅎㅎ
         sum = sum + projectCount
-    Next Week
+    Next week
 
     gTotalProjectNum = sum
     
@@ -257,7 +137,7 @@ End Function
 ' 프로젝트를 생성하고
 Public Function CreateProjects()
 
-    Dim Week As Integer
+    Dim week As Integer
     Dim Id As Integer
     Dim startPrjNum As Integer
     Dim endPrjNum As Integer
@@ -276,10 +156,10 @@ Public Function CreateProjects()
     MainForm.ProgressBar1.Min = 0
     MainForm.ProgressBar1.Text = "프로젝트 생성중"
     
-    For Week = 1 To GlobalEnv.SimulationWeeks
-        preTotal = gOrderTable(1, Week)
+    For week = 1 To GlobalEnv.SimulationWeeks
+        preTotal = gOrderTable(1, week)
         startPrjNum = preTotal + 1
-        endPrjNum = gOrderTable(2, Week) + preTotal
+        endPrjNum = gOrderTable(2, week) + preTotal
 
         If startPrjNum = 0 Then GoTo Continue
         If startPrjNum > endPrjNum Then GoTo Continue
@@ -287,40 +167,18 @@ Public Function CreateProjects()
         ' 이번 주에 발생한 프로젝트들을 생성하고 초기화 한다.
         For Id = startPrjNum To endPrjNum
             Set tempPrj = New clsProject
-            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, Week)
+            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, week)
             Set gProjectTable(Id) = tempPrj
         Next Id
 
 Continue:
-        MainForm.ProgressBar1.value = Week
-    Next Week
+        MainForm.ProgressBar1.value = week
+    Next week
 End Function
 
 
 
-' PROJECT_SHEET_NAME 시트에 헤더를 생성한다.
-' VB 6.0에서 Option Base 1을 사용했더라도, Split 함수는 기본적으로 0 기반 배열을 반환
-' 따라서 1 기반 배열로 변환하는 코드를 추가 함
-Public Sub PrintProjectHeader()
 
-    Dim MyArray() As Variant, tempArray() As String, strHeader As String
-    
-    Call ClearSheet(gWsProject) '시트의 모든 내용을 지우고 셀 병합 해제
-    
-    'strHeader = "타입,순번,발주일,시작가능,기간,시작,수익,경험,성공%,nCF,CF1%,CF2%,CF3%,선금,중도,잔금"
-    strHeader = "pType,PRJ_ID,기간,시작가능,끝,발주일,총수익,경험,성공%,CF갯수,CF1%,CF2%,CF3%,선금,중도,잔금"
-
-    tempArray = Split(strHeader, ",")
-    MyArray = ConvertToBase1(tempArray) ' TempArray를 1 기반 배열로 변환
-    Call PrintArrayWithLine(gWsProject, 1, 1, MyArray)
-    
-    'strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3,,,,"
-    strHeader = "act갯수,,Dur,start,end,,HR_H,HR_M,HR_L,,mon_cf1,mon_cf2,mon_cf3,,,,"
-    tempArray = Split(strHeader, ",")
-    MyArray = ConvertToBase1(tempArray)
-    Call PrintArrayWithLine(gWsProject, 2, 1, MyArray)
-    
-End Sub
 
 
 Public Function GetVariableValue(rng As Object, variableName As String) As Variant
@@ -408,15 +266,6 @@ End Function
 '    Call PrintArrayWithLine(gWsProject, 3, 1, arrHeader)
 'End Function
 
-Function PrintProjectAll()
-    Dim temp As clsProject
-    Dim index As Integer
-
-    For index = 1 To gTotalProjectNum
-        Set temp = gProjectTable(index)
-        Call temp.PrintProjectInfomation
-    Next index
-End Function
 
 Function ConvertToBase1(arr As Variant) As Variant
     Dim index As Integer
@@ -449,27 +298,27 @@ End Function
 
 
 Function PrintDashboard()
-    Call ClearSheet(gWsDashboard)
+    Call ClearSheet(g_WsDashboard)
 
     Dim arrHeader As Variant
     arrHeader = Array("주", "누계", "발주")
     arrHeader = PivotArray(arrHeader)
 
-    Call PrintArrayWithLine(gWsDashboard, 2, 1, arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, 2, 2, gPrintDurationTable)
-    Call PrintArrayWithLine(gWsDashboard, 3, 2, gOrderTable)
+    Call PrintArrayWithLine(g_WsDashboard, 2, 1, arrHeader)
+    Call PrintArrayWithLine(g_WsDashboard, 2, 2, gWeekNumberTable)
+    Call PrintArrayWithLine(g_WsDashboard, 3, 2, gOrderTable)
     
     arrHeader = Array("투입", "HR_H", "HR_M", "HR_L")
     arrHeader = PivotArray(arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, 6, 1, arrHeader)
+    Call PrintArrayWithLine(g_WsDashboard, 6, 1, arrHeader)
     
     arrHeader = Array("여유", "HR_H", "HR_M", "HR_L")
     arrHeader = PivotArray(arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, 11, 1, arrHeader)
+    Call PrintArrayWithLine(g_WsDashboard, 11, 1, arrHeader)
     
     arrHeader = Array("총원", "HR_H", "HR_M", "HR_L")
     arrHeader = PivotArray(arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, 16, 1, arrHeader)
+    Call PrintArrayWithLine(g_WsDashboard, 16, 1, arrHeader)
     
 End Function
 
@@ -477,7 +326,7 @@ Function ClearSheet(ws As Object)
     With ws
         Dim endRow As Long
         Dim endCol As Long
-        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
+        endRow = .UsedRange.Rows.Count + .UsedRange.row - 1
         endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).UnMerge
         .Range(.Cells(1, 1), .Cells(endRow, endCol)).Clear
@@ -505,7 +354,7 @@ Function FindRowWithKeyword(ws As Object, keyword As String) As Long
     Dim index As Long
     
     ' 엑셀 워크시트의 마지막 행 구하기
-    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).Row ' xlUp = -4162
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(-4162).row ' xlUp = -4162
 
     ' 1번 열을 순회하며 키워드 찾기
     For index = 1 To lastRow
@@ -531,16 +380,5 @@ End Function
 
 
 
-Private Function SetProjectActivity(cProject As clsProject, index As Integer, activity As Activity_)
-
-    Call cProject.SetActivityDuration(index, activity.ActivityType)
-    Call cProject.SetActivityDuration(index, activity.duration)
-    Call cProject.SetActivitystartDate(index, activity.startDate)
-    Call cProject.SetActivityEndDate(index, activity.endDate)
-    Call cProject.SetActivityHighSkill(index, activity.HighSkill)
-    Call cProject.SetActivityMidSkill(index, activity.MidSkill)
-    Call cProject.SetActivityLowSkill(index, activity.LowSkill)
-    
-End Function
 
 

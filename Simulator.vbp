@@ -6,7 +6,6 @@ Module=GlobalFunction; GlobalFunction.bas
 Class=clsProject; clsProject.cls
 Class=clsCompany; clsCompany.cls
 UserControl=ProgressBar.ctl
-Module=DebugInfo; DebugInfo.bas
 IconForm="MainForm"
 Startup="MainForm"
 HelpFile=""

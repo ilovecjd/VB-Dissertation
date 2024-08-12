@@ -9,10 +9,26 @@ Begin VB.Form MainForm
    ScaleHeight     =   8400
    ScaleWidth      =   14295
    StartUpPosition =   3  'Windows 기본값
+   Begin VB.CheckBox Chk_ProjectDebug 
+      Caption         =   "Proj Debug"
+      Height          =   375
+      Left            =   360
+      TabIndex        =   24
+      Top             =   6960
+      Width           =   1815
+   End
+   Begin VB.CheckBox Chk_SimiDebug 
+      Caption         =   "Simul Debug"
+      Height          =   375
+      Left            =   4680
+      TabIndex        =   23
+      Top             =   6960
+      Width           =   1455
+   End
    Begin VB.CommandButton ScreenUpdating 
       Caption         =   "Command1"
       Height          =   615
-      Left            =   6600
+      Left            =   8160
       TabIndex        =   22
       Top             =   6120
       Width           =   1695
@@ -26,11 +42,11 @@ Begin VB.Form MainForm
       Width           =   1455
    End
    Begin simulator.ProgressBar ProgressBar1 
-      Height          =   375
-      Left            =   360
+      Height          =   615
+      Left            =   240
       TabIndex        =   20
-      Top             =   7080
-      Width           =   6615
+      Top             =   7560
+      Width           =   9615
       _ExtentX        =   11668
       _ExtentY        =   661
       Value           =   0
@@ -215,11 +231,11 @@ Attribute VB_Exposed = False
 Option Explicit
 Option Base 1
 
-
 Const STR_DATA_FILE = "data.xlsm"
 Const STR_RUN_LOG_FILE = "run_log.txt"
 Const STR_START_EXCEL = "시작"
 Const STR_END_EXCEL = "종료"
+Const NUN_OF_COMPANY As Integer = 1 ' 시뮬레이션 할 회사 수. 멀티 쓰레드를 고려해서 배열로
 
 ' data.xlsm 파일에서 Project를 로드 할지, 새로 생성할지 표시하는 플래그값
 Enum LoadOrCreate
@@ -227,7 +243,33 @@ Enum LoadOrCreate
         Create
 End Enum
 
+Private m_Companies(NUN_OF_COMPANY) As clsCompany
 
+
+
+
+Private Sub CheckDebug_Click()
+
+End Sub
+
+Private Sub Chk_ProjectDebug_Click()
+
+    If Chk_ProjectDebug.value = 1 Then
+        g_ProjDebug = True
+    Else
+        g_ProjDebug = False
+    End If
+End Sub
+
+Private Sub Chk_SimiDebug_Click()
+
+    If Chk_SimiDebug.value = 1 Then
+        g_SimulDebug = True
+    Else
+        g_SimulDebug = False
+    End If
+    
+End Sub
 
 ' 프로그램의 기본적인 환경변수들을 설정한다.
 ' data.xlsm 파일 존재 여부와 유효성 검사
@@ -237,9 +279,11 @@ Private Sub Form_Load()
         
     GCurrentPath = App.Path ' 프로그램 및 data.xlsm 파일의 경로
         
-    gDebugInfoEnable = True ' 디버깅 모드가 디폴트
+    g_SimulDebug = True ' 시뮬레이션은 디버깅 모드 on 이 디폴트
+    g_ProjDebug = False ' 프로젝트 생성은 디버깅 off 가 디폴트
+    
     gProjectLoadOrCreate = LoadOrCreate.Load
-    Option_Load.value = True ' 프로젝트들은 data.xlsm 파일에 기록된 값들을 사용하는것이 디폴트 설정
+    
     
     'run_log.txt 파일이 없으면 생성 후 계속 진행, data.xlsm 파일이 없으면 경고 후 프로그램 종료,
     Call CheckFiles
@@ -255,6 +299,43 @@ Private Sub Form_Load()
     ' data.xlsm 파일에서 시뮬레이션의 기본설정값들을 가져온다.
     Call LoadEnvFromExcel
     Call SetUserParameters
+    
+    ' company 들을 생성한다.
+    Dim index As Integer
+    For index = 1 To NUN_OF_COMPANY
+        Set m_Companies(index) = New clsCompany
+        m_Companies(index).Init (index)
+    Next
+    
+    ' 컨드롤들의 상태 설정
+    ProgressBar1.Max = GlobalEnv.SimulationWeeks
+    ProgressBar1.Min = 0
+    ProgressBar1.Text = "프로젝트를 생성하세요"
+    
+    
+    If g_SimulDebug Then
+        Chk_SimiDebug.value = 1
+    Else
+        Chk_SimiDebug.value = 0
+    End If
+    
+    
+    If g_ProjDebug Then
+        Chk_ProjectDebug.value = 1
+    Else
+        Chk_ProjectDebug.value = 0
+    End If
+    
+    
+    If gProjectLoadOrCreate = LoadOrCreate.Load Then
+        Option_Load.value = True
+    Else
+        Option_Create.value = True
+    End If
+        
+        
+    Run.Enabled = False
+       
         
 End Sub
 
@@ -281,7 +362,7 @@ Private Sub Form_Unload(Cancel As Integer)
                     "문제를 확인하세요", vbCritical, "알수 없는 상태로 종료")
     End Select
         
-    Call CleanUpExcel(retCode) ' 열려있는 엑섹을 종료. 변경된 내용은 저장하지 않는다.
+    Call CleanUpExcel(retCode) ' 열려있는 엑셀을 종료. 변경된 내용은 저장하지 않는다.
     Call WriteLog(STR_END_EXCEL) ' 로그파일에 종료를 표시한다.
     
 End Sub
@@ -340,8 +421,9 @@ Private Sub btnGenBoardNProject_Click()
         If (vbNo = Res) Then
             Exit Sub
         Else
-            
-            Call LoadTablesFromExcel ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
+            For index = 1 To NUN_OF_COMPANY
+                Call m_Companies(index).LoadProjectsFromExcel   ' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
+            Next
         End If 'If (vbNo = Res) Then
         
     '2. 화면에 입력된 값으로 프로젝트를 새롭게 생성
@@ -352,14 +434,21 @@ Private Sub btnGenBoardNProject_Click()
             Exit Sub ' btnGenBoardNProject_Click 함수 종료
             
         Else
-            Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
-            Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
-            Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
-            Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
-            Call PrintProjectAll    ' 프로젝트 전체를 출력한다
+            For index = 1 To NUN_OF_COMPANY
+                Call m_Companies(index).CreateProjects      ' 프로젝트 생성
+                Call m_Companies(index).PrintProjectHeader  ' Project 시트의 헤더를 기록한다.
+                Call m_Companies(index).PrintProjectAll     ' 프로젝트 전체를 출력한다
+                Call m_Companies(index).PrintProjectAll     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
+            Next
+
         End If  ' If (vbNo = Res) Then
         
     End If  ' If gProjectLoadOrCreate = LoadOrCreate.Load Then
+    
+    ' song Call
+    
+    Run.Enabled = True
+    
 
 End Sub
 
@@ -427,11 +516,11 @@ Public Sub ModifyExcel()
     On Error GoTo 0 '오류 객체에 저장된 값을 초기값으로 변경
     
     ' song 엑셀의 인스턴트만 남아 있는 경우에 대한 예외 처리 필요.
-    Set gWsParameters = xlWb.Sheets(PARAMETERS_SHEET_NAME)
-    Set gWsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
-    Set gWsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
-    Set gWsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
-    Set gWsDebugInfo = xlWb.Sheets(DEBUGINFO_SHEET_NAME)
+    Set g_WsParameters = xlWb.Sheets(PARAMETERS_SHEET_NAME)
+    Set g_WsDashboard = xlWb.Sheets(DBOARD_SHEET_NAME)
+    Set g_WsProject = xlWb.Sheets(PROJECT_SHEET_NAME)
+    Set g_WsActivity_Struct = xlWb.Sheets(ACTIVITY_SHEET_NAME)
+    Set g_WsDebugInfo = xlWb.Sheets(DEBUGINFO_SHEET_NAME)
     
 End Sub
 
@@ -441,7 +530,7 @@ Sub LoadEnvFromExcel()
     
     Dim posY As Long, posX As Long
     
-    With gWsParameters
+    With g_WsParameters
     
     ' 시뮬레이션의 기본 환경 변수들
     posX = 2: posY = 2: GlobalEnv.SimulationWeeks = .Cells(posY, posX) '156 ' 3년(52주 * 3년)
@@ -572,20 +661,15 @@ Private Sub Run_Click()
     
     Dim Company As clsCompany
     
-    Set Company = New clsCompany
-    Call Company.Init(1)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
-
-    Debug.Print VBA.String(200, vbNewLine)
+    Set Company = m_Companies(1)
+    'song 생성시 초기화 하자.Call Company.Init(1)    ' 초기화.회사 ID(같은 조건에서 여러 회사를 운영), 프로젝트 갯수
     
     For index = 1 To GlobalEnv.SimulationWeeks
         Call Company.Decision(index)    ' i번째 기간에 결정해야 할 일들
-        Call Company.PrintDebugInfo(index)
-        'Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
-        'Call PrintSimulationResults(Company)
+        Call Company.DebugDashboard(index)
     Next
-    
-    Call ClearTableArea(gWsDashboard, DONG_TABLE_INDEX)
-    Call Company.PrintSimulationResults
+       
+    Call Company.PrintSimulationResults(GlobalEnv.SimulationWeeks)
     
 End Sub
 
@@ -594,7 +678,7 @@ Function ClearTableArea(ws As Worksheet, startRow As Long)
     With ws
         Dim endRow As Long ' 마지막행
         Dim endCol As Long ' 마지막열
-        endRow = .UsedRange.Rows.Count + .UsedRange.Row - 1
+        endRow = .UsedRange.Rows.Count + .UsedRange.row - 1
         endCol = .UsedRange.Columns.Count + .UsedRange.Column - 1
 
         ' 엑셀 파일의 셀들을 정리한다.
@@ -616,7 +700,7 @@ Private Function CheckDataFile() As Boolean
     CheckDataFile = True
     strErr = "다음을 확인하세요."
         
-    With gWsParameters
+    With g_WsParameters
     
         strErr = strErr & vbNewLine & PARAMETERS_SHEET_NAME & ": "
         
@@ -640,7 +724,7 @@ Private Function CheckDataFile() As Boolean
     End With
         
         
-    With gWsDashboard
+    With g_WsDashboard
     
         strErr = strErr & vbNewLine & DBOARD_SHEET_NAME & ": "
         

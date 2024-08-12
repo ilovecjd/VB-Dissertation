@@ -14,6 +14,13 @@ Attribute VB_Exposed = False
 Option Explicit
 Option Base 1
 
+Private m_orderTable()      As Variant  ' 주별 발주 프로젝트의 누계와 주차별 갯수, week 갯수 가변
+Private m_projectTable()    As Variant  ' 발주된 모든 프로젝트 object 를 보관, 가변
+
+Private m_totalProjectNum   As Integer  ' 발주된 프로젝트의 총 갯수
+
+
+
 Private doingTable()     As Integer  ' 기간별로 진행중인 프로젝트들의 ID를 관리하는 테이블
 Private doneTable()      As Integer  ' 기간별로 완료된 프로젝트들의 ID를 관리하는 테이블
 Private defferTable()    As Integer  ' 기간별로 보류된 프로젝트들의 ID를 관리하는 테이블
@@ -23,8 +30,6 @@ Private candidateTable() As Integer   ' 후보　프로젝트들의 ID를 관리하는 테이블
 Public doingTableSize    As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
 Public doneTableSize     As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
 Public defferTableSize   As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
-
-Private projectTable()   As clsProject  ' 생성된(발주된) 프로젝트를 관리하는 테이블
 
 Private doingHR_H_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 상급자
 Private doingHR_M_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 중급자
@@ -36,15 +41,14 @@ Private totalHR_L_Table()  As Integer  ' 기간별로 회사가 보유한 초급자
  
 Public companyID As Integer ' 회사 이름
 
-Public sample As Integer
-
-
 Private Const MAX_CANDIDATES As Integer = 50 ' SONG 임의로 지정. 동적으로 변하게 할 필요까지는 없어 보임.
 
 
 Public debugArrayWidth As Long
 Public debugArrayHeight As Long
-Private debugInfoArray() As Variant
+
+Private m_AllDashboardInfo() As Variant
+Private m_AllProjectInfo() As Variant
 
 
 ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
@@ -93,8 +97,6 @@ End Sub
 ' Company ID와 발생할 프로젝트 테이블을 저장한다.
 ' 프로젝트, 인력, 자금을 관리할 테이블 생성
 Public Sub Init(Id As Integer)
-      
-    projectTable = gProjectTable
     
     companyID = Id
     
@@ -128,7 +130,7 @@ Public Sub Init(Id As Integer)
     totalHR_M_Table(1) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
     totalHR_L_Table(1) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
 
-    ReDim debugInfoArray(1 To debugArrayHeight, 1 To debugArrayWidth)
+    ReDim m_AllDashboardInfo(1 To debugArrayHeight, 1 To debugArrayWidth)
     
 End Sub
 
@@ -160,19 +162,19 @@ Private Function comPrintDashboard()
     arrHeader = Array("월", "누계", "prjNum")
 
     startRow = 6
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingTable)       ' 내용을 적는다.
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 2, 2, doingTable)       ' 내용을 적는다.
 
     startRow = startRow + doingTableSize + 2
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doneTable)    ' 내용을 적는다.
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 2, 2, doneTable)    ' 내용을 적는다.
 
     startRow = startRow + doneTableSize + 2
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, defferTable)      ' 내용을 적는다.
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
+    Call PrintArrayWithLine(g_WsDashboard, startRow + 2, 2, defferTable)      ' 내용을 적는다.
     
 End Function
 
@@ -192,18 +194,18 @@ Private Function SelectNewProject(thisWeek As Integer)
         Exit Function
     End If
     
-    cnt = gOrderTable(2, thisWeek)
+    cnt = m_orderTable(2, thisWeek)
     If cnt = 0 Then ' 이번주에 발주된 프로젝트가 없다.
         Exit Function
     End If
 
-    startProjectNum = gOrderTable(1, thisWeek) + 1  ' 이번기간에 처음 프로젝트
-    endProjectNum = gOrderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
+    startProjectNum = m_orderTable(1, thisWeek) + 1  ' 이번기간에 처음 프로젝트
+    endProjectNum = m_orderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
 
     ' song ==> 일단 모든 프로젝트를 다 하는것으로 하자. 추후 조건을 추가한다. 인원, 정책
     For Id = startProjectNum To endProjectNum
 
-        Set cProject = projectTable(Id)
+        Set cProject = m_projectTable(Id)
         
         If cProject.projectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
 
@@ -246,7 +248,7 @@ Private Function CheckLastWeek(thisWeek As Integer)
 
     Dim cProject As clsProject
     Dim cnt     As Integer
-    Dim I       As Integer
+    Dim index       As Integer
     Dim Id      As Integer
 
 
@@ -263,22 +265,22 @@ Private Function CheckLastWeek(thisWeek As Integer)
     Call CopyLastToCurrent(doingTable, thisWeek, cnt)
 
     '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
-    For I = 1 To cnt
+    For index = 1 To cnt
 
-        Id = doingTable(I + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
+        Id = doingTable(index + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
 
         If Id = 0 Then
             Exit For
         End If
 
-        Set cProject = projectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
+        Set cProject = m_projectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
         
         If cProject.projectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
         
             ' 프로젝트 Object 검사
             If thisWeek = (cProject.startDate + cProject.projectDuration - 1) Then ' 지난번에 끝났으면
                 Call RemoveFromTable(doingTable, doingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
-                I = I - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
+                index = index - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
             End If
             
         Else
@@ -338,7 +340,7 @@ End Function
 ' 테이블의 week에 projectID 를 추가한다.
 ' 테이블의 크기를 벗어나면 테이블의 크기를 변경한다.
 ' tableSize 를 변경한다. (리턴함)
-Public Function AddProjectEntry(Table As Variant, TableRow As Integer, addWeek As Integer, ProjectID As Integer) As Integer
+Public Function AddProjectEntry(Table As Variant, TableRow As Integer, addWeek As Integer, projectID As Integer) As Integer
 
     Dim addRow As Integer ' ProjectId를 기록할 행번호
     
@@ -352,7 +354,7 @@ Public Function AddProjectEntry(Table As Variant, TableRow As Integer, addWeek A
     End If
     
     ' 프로젝트 ID를 Table의 next 위치에 추가
-    Table(addRow, addWeek) = ProjectID
+    Table(addRow, addWeek) = projectID
     
     ' 첫 번째 행의 값을 1 증가시켜 누계를 업데이트
     Table(1, addWeek) = Table(1, addWeek) + 1
@@ -392,50 +394,50 @@ End Function
  
 ' End Sub
 
-Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal Week As Integer, ByVal ProjectID As Integer)
+Sub RemoveFromTable(prjTable As Variant, tableSize As Integer, ByVal week As Integer, ByVal projectID As Integer)
 
-    Dim I       As Integer
+    Dim index       As Integer
     Dim sumRow  As Integer ' sum 이 들어있는 위치
     Dim idCount As Integer  ' id들의 갯수
     Dim found   As Boolean
         
     sumRow = 1
     found = False
-    idCount = prjTable(sumRow, Week)
+    idCount = prjTable(sumRow, week)
 
     ' 배열의 크기 확인
-    If UBound(prjTable, 2) < Week Or Week < 1 Or Week > GlobalEnv.SimulationWeeks Then
+    If UBound(prjTable, 2) < week Or week < 1 Or week > GlobalEnv.SimulationWeeks Then
         MsgBox "Week is out of range", vbExclamation
         Exit Sub
     End If
     ' song ==> tableSize의 크기도 검증하자.
     
     ' 해당 주에서 projectID 찾기
-    For I = (sumRow + 1) To (sumRow + idCount)
-        If prjTable(I, Week) = ProjectID Then
+    For index = (sumRow + 1) To (sumRow + idCount)
+        If prjTable(index, week) = projectID Then
             found = True
             Exit For
         End If
-    Next I
+    Next index
 
     ' ID를 발견하면 삭제 및 아래 행들 이동
     If found Then
 
-        For I = I To tableSize
+        For index = index To tableSize
 
-            If I = tableSize Then 'ID가 마지막 행에 들어 있으면
-                prjTable(I, Week) = Empty
+            If index = tableSize Then 'ID가 마지막 행에 들어 있으면
+                prjTable(index, week) = Empty
             Else
-                prjTable(I, Week) = prjTable(I + 1, Week)
+                prjTable(index, week) = prjTable(index + 1, week)
             End If
 
-        Next I
+        Next index
 
         ' 합계 및 프로젝트 수 감소
-        prjTable(sumRow, Week) = prjTable(sumRow, Week) - 1
+        prjTable(sumRow, week) = prjTable(sumRow, week) - 1
         
     Else
-        MsgBox "Project ID " & ProjectID & " not found in week " & Week, vbExclamation
+        MsgBox "Project ID " & projectID & " not found in week " & week, vbExclamation
     End If
 
 End Sub
@@ -463,19 +465,19 @@ Function SelectionOfCandidates(thisWeek As Integer)
         candidateTable(cnt) = 0
     Next
     
-    cnt = gOrderTable(2, thisWeek)
+    cnt = m_orderTable(2, thisWeek)
     If cnt = 0 Then ' 이번주에 발주된 프로젝트가 없다.
         Exit Function
     End If
 
-    startProjectNum = gOrderTable(1, thisWeek) + 1  ' 이번기간의 처음 프로젝트
-    endProjectNum = gOrderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
+    startProjectNum = m_orderTable(1, thisWeek) + 1  ' 이번기간의 처음 프로젝트
+    endProjectNum = m_orderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
 
     ' 이번기간에 발주된 프로젝트을 모두 모은다.
     index = 1
     For Id = startProjectNum To endProjectNum
 
-        Set cProject = projectTable(Id)
+        Set cProject = m_projectTable(Id)
         
 
         If cProject.projectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
@@ -542,13 +544,13 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
             ' activity의 필요한 인력을 임시 테이블에 추가한다.
             Dim tempCnt As Integer
             
-            tempCnt = tempH_Table(j) + activity.HighSkill
+            tempCnt = tempH_Table(j) + activity.highSkill
             tempH_Table(j) = tempCnt
             
-            tempCnt = tempM_Table(j) + activity.MidSkill
+            tempCnt = tempM_Table(j) + activity.midSkill
             tempM_Table(j) = tempCnt
             
-            tempCnt = tempL_Table(j) + activity.LowSkill
+            tempCnt = tempL_Table(j) + activity.lowSkill
             tempL_Table(j) = tempCnt
             
         Next j
@@ -619,13 +621,13 @@ Function AddProjectHR(thisWeek As Integer, cProject As clsProject)
             ' activity의 필요한 인력을 테이블에 추가한다.
             Dim tempCnt As Integer
             
-            tempCnt = doingHR_H_Table(j) + activity.HighSkill
+            tempCnt = doingHR_H_Table(j) + activity.highSkill
             doingHR_H_Table(j) = tempCnt
             
-            tempCnt = doingHR_M_Table(j) + activity.MidSkill
+            tempCnt = doingHR_M_Table(j) + activity.midSkill
             doingHR_M_Table(j) = tempCnt
             
-            tempCnt = doingHR_L_Table(j) + activity.LowSkill
+            tempCnt = doingHR_L_Table(j) + activity.lowSkill
             doingHR_L_Table(j) = tempCnt
             
         Next
@@ -639,18 +641,18 @@ End Function
 
 ' 프로젝트의 Activities 배열에서 index 에 해당하는 activity를 가져온다.
 ' 사용자 정의 type 구조체는 직접 접근이 안되어서 개별로 데이터를 가져와야 한다.
-Private Function GetProjectActivity(cProject As clsProject, index As Integer) As Activity_
+Private Function GetProjectActivity(cProject As clsProject, actNum As Integer) As Activity_
 
     Dim activity As Activity_
     
     ' 개별 필드를 가져와서 Activity 구조체에 할당
-    activity.ActivityType = cProject.GetActivityActivityType(index)
-    activity.duration = cProject.GetActivityDuration(index)
-    activity.startDate = cProject.GetActivitystartDate(index)
-    activity.endDate = cProject.GetActivityEndDate(index)
-    activity.HighSkill = cProject.GetActivityHighSkill(index)
-    activity.MidSkill = cProject.GetActivityMidSkill(index)
-    activity.LowSkill = cProject.GetActivityLowSkill(index)
+    activity.activityType = cProject.GetActivityActivityType(actNum)
+    activity.duration = cProject.GetActivityDuration(actNum)
+    activity.startDate = cProject.GetActivitystartDate(actNum)
+    activity.endDate = cProject.GetActivityEndDate(actNum)
+    activity.highSkill = cProject.GetActivityHighSkill(actNum)
+    activity.midSkill = cProject.GetActivityMidSkill(actNum)
+    activity.lowSkill = cProject.GetActivityLowSkill(actNum)
     
     ' 완성된 Activity 구조체를 반환
     GetProjectActivity = activity
@@ -658,125 +660,227 @@ End Function
 
 
 
-Public Function PrintSimulationResults()
-    
-    'Call ClearSheet(gWsDashboard)          '시트의 모든 내용을 지우고 셀 병합 해제
 
-    Dim startRow    As Long
-    Dim arrHeader   As Variant
-    Dim tempArray() As Integer
-        
-    
-    ' 인력테이블을 기록
-    ' 상급자 투입 테이블
-    startRow = 6
-    arrHeader = Array("투입", "HR_H", "HR_M", "HR_L")
-    arrHeader = PivotArray(arrHeader)
-        
-    Call PrintArrayWithLine(gWsDashboard, startRow, 1, arrHeader)        ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, doingHR_H_Table)      ' 상급자 투입 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingHR_M_Table)      ' 중급자 투입 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 3, 2, doingHR_L_Table)      ' 초급자 투입 테이블
-    
-    'song ==> 일단은 doingHR_H_Table로 넣어 놓음. 추후 필요시 여유 테이브로, 필요없으면 삭제
-    startRow = startRow + 5
-    arrHeader = Array("여유", "HR_H", "HR_M", "HR_L")
-    arrHeader = PivotArray(arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, startRow, 1, arrHeader)        ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, doingHR_H_Table)      ' 상급자 여유 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingHR_M_Table)      ' 중급자 여유 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 3, 2, doingHR_L_Table)      ' 초급자 여유 테이블
-    
-    
-    startRow = startRow + 5
-    arrHeader = Array("총원", "HR_H", "HR_M", "HR_L")
-    arrHeader = PivotArray(arrHeader)
-    Call PrintArrayWithLine(gWsDashboard, startRow, 1, arrHeader)        ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, doingHR_H_Table)      ' 상급자 총원 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingHR_M_Table)      ' 중급자 총원 테이블
-    Call PrintArrayWithLine(gWsDashboard, startRow + 3, 2, doingHR_L_Table)      ' 초급자 총원 테이블
-    
-    
-    'song 제목을 적자
-    arrHeader = Array("주", "누계", "prjNum")
-    arrHeader = PivotArray(arrHeader)
-    
-    startRow = DONG_TABLE_INDEX
-    
-    ' 진행중인 프로젝트
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doingTable)      ' 내용을 적는다.
+Private Function SetProjectActivity(cProject As clsProject, index As Integer, activity As Activity_)
 
-    ' 완료된 프로젝트
-    startRow = startRow + doingTableSize + 2
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, doneTable)       ' 내용을 적는다.
-
-    ' 미루어진 프로젝트
-    startRow = startRow + doneTableSize + 2
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 1, arrHeader)       ' 세로항목을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 1, 2, gWeekNumberTable) '기간을 적고
-    Call PrintArrayWithLine(gWsDashboard, startRow + 2, 2, defferTable)     ' 내용을 적는다.
-
-
-    Exit Function
-
+    Call cProject.SetActivityDuration(index, activity.activityType)
+    Call cProject.SetActivityDuration(index, activity.duration)
+    Call cProject.SetActivitystartDate(index, activity.startDate)
+    Call cProject.SetActivityEndDate(index, activity.endDate)
+    Call cProject.SetActivityHighSkill(index, activity.highSkill)
+    Call cProject.SetActivityMidSkill(index, activity.midSkill)
+    Call cProject.SetActivityLowSkill(index, activity.lowSkill)
     
 End Function
 
+Public Function CreateProjects()
 
-
-
-
-
-
-
-
-
-' 기간이 변경되면 수정해야 하는데 앞쪽만 볼꺼라..
-' debuginfo sheet 에 정보를 출력한다.
-Public Function PrintDebugInfo(thisWeek As Integer)
+    ' 발생한 프로젝트의 갯수를 테이블에 기록한다.
+    Dim week As Integer
+    Dim cnt As Integer
+    Dim sum As Integer
     
-    If Not gDebugInfoEnable Then
-        Exit Function
-    End If
+    ReDim m_orderTable(2, GlobalEnv.SimulationWeeks)
 
-    Dim index As Integer, j As Integer
-            
-    ' 정보를 모을 배열을 초기화 한다.
-    For index = 1 To debugArrayHeight
-        For j = 1 To debugArrayWidth
-            debugInfoArray(index, j) = ""
-        Next
-    Next
-        
-    Call GetAllDebugInfo(thisWeek) ' 정보를 모은다
+    For week = 1 To GlobalEnv.SimulationWeeks
     
-    Call ClearSheet(gWsDebugInfo) ' 시트를 지운다.
+        cnt = PoissonRandom(GlobalEnv.WeeklyProb)        ' 이번주 발생하는 프로젝트 갯수
+        m_orderTable(1, week) = sum             ' 누계
+        m_orderTable(2, week) = cnt    ' 발생 프로젝트갯수
         
-    With gWsDebugInfo
+        ' 이번주 까지 발생한 프로젝트 갯수. 다음주에 기록된다. ==> 이전주까지 발생한 프로젝트 갯수후위연산. vba에서 do while 문법 모름... ㅎㅎ
+        sum = sum + cnt
         
-        ' 모은 정보를 시트에 출력한다.
-        .Range(.Cells(1, 1), .Cells(debugArrayHeight, GlobalEnv.SimulationWeeks)).value = debugInfoArray
+    Next week
+
+    m_totalProjectNum = sum
+    
+    
+    
+    Dim Id As Integer
+    Dim startNum As Integer
+    Dim endNum As Integer
+    Dim preTotal As Integer
+    Dim tempPrj As clsProject
+    
+    ' 프로젝트 관리하는 테이블에 생성한 프로젝트 object 를 넣는다.
+    ReDim m_projectTable(m_totalProjectNum)
+
+    MainForm.ProgressBar1.Max = GlobalEnv.SimulationWeeks
+    MainForm.ProgressBar1.Min = 0
+    MainForm.ProgressBar1.Text = "프로젝트 생성중"
+    
+    For week = 1 To GlobalEnv.SimulationWeeks
+        preTotal = m_orderTable(1, week) ' 지난주까지의 발주 프로젝트 누계
+        startNum = preTotal + 1          ' 신규 프로젝트의 시작번호 = 누계 +1
+        endNum = preTotal + m_orderTable(2, week)  ' 마지막 프로젝트의 시작번호  =  지난주 누계 + 이번주 발생
+
+        If startNum = 0 Then GoTo Continue
+        If startNum > endNum Then GoTo Continue
+
+        ' 이번 주에 발생한 프로젝트들을 생성하고 초기화 한다.
+        For Id = startNum To endNum
+            Set tempPrj = New clsProject
+            Call tempPrj.Init(P_TYPE_EXTERNAL, Id, week)
+            Set m_projectTable(Id) = tempPrj
+        Next Id
         
-        ' 테두리를 그린다.
-        Call DebugPrintLine(2, 4)
-        Call DebugPrintLine(7, 9)
-        Call DebugPrintLine(12, 14)
-        Call DebugPrintLine(17, 19)
-        Call DebugPrintLine(22, 32)
-        Call DebugPrintLine(34, 44)
-        Call DebugPrintLine(46, 56)
+Continue:
+        MainForm.ProgressBar1.value = week
+        DebugProjectSheet (week)
         
+    Next week
+    
+End Function
+'
+'Call CreateOrderTable   ' Order 테이블을 생성하고 '주'을 입력한다.
+'            Call CreateProjects     ' Order 테이블의 내용에 따라서 프로젝트를 생성한다.
+'            Call PrintDashboard     ' Order 테이블과 인력정보를 대시보드 시트에 출력한다.
+'            Call PrintProjectHeader ' Project 시트의 헤더를 기록한다.
+'            Call PrintProjectAll    ' 프로젝트 전체를 출력한다
+
+' data.xlsm 파일에서 order 테이블과 project 테이블을 읽어들인다.
+Public Function LoadProjectsFromExcel() As Boolean
+
+    ' Load Order Table
+    Dim startIndex As Long
+    
+    startIndex = ORDER_TABLE_INDEX + 2
+    
+    ReDim m_orderTable(1 To 2, 1 To GlobalEnv.SimulationWeeks)
+    
+    With g_WsDashboard
+        m_orderTable = .Range(.Cells(startIndex, 2), .Cells(startIndex + 1, GlobalEnv.SimulationWeeks + 1)).value
     End With
+
+    m_totalProjectNum = m_orderTable(1, GlobalEnv.SimulationWeeks) + m_orderTable(2, GlobalEnv.SimulationWeeks)
+    
+
+    ' data.xlsm 파일에서 프로젝트를 읽어들인다.
+    Dim projectID As Integer
+    Dim startRow As Long, endRow As Long
+    
+    Dim tempProject As clsProject
+    Dim projectInfo As Variant
+    
+    ReDim m_projectTable(m_totalProjectNum)
+
+    For projectID = 1 To m_totalProjectNum
+    
+        ' 프로젝트 생성 및 설정
+        Set tempProject = New clsProject 'CF 배열과 Activity 배열을 할당한다.
+        
+        startRow = PROJECT_TABLE_INDEX + (projectID - 1) * PRJ_SHEET_HEADER_H + 1
+        endRow = startRow + PRJ_SHEET_HEADER_H - 1
+
+        With g_WsProject
+            projectInfo = .Range(.Cells(startRow, 1), .Cells(endRow, PRJ_SHEET_HEADER_W)).value
+        End With
+
+        tempProject.projectType = projectInfo(1, 1)
+        tempProject.projectNum = projectInfo(1, 2)
+        tempProject.projectDuration = projectInfo(1, 3)
+        tempProject.possiblestartDate = projectInfo(1, 4)
+        tempProject.endDate = projectInfo(1, 5)
+        tempProject.orderDate = projectInfo(1, 6)
+        tempProject.profit = projectInfo(1, 7)
+        tempProject.experience = projectInfo(1, 8)
+        tempProject.successProbability = projectInfo(1, 9)
+        
+        ' Cash Folwer 설정
+        Dim tempCF(1 To MAX_N_CF) As Integer
+        Dim index As Integer
+        
+        For index = 1 To MAX_N_CF
+            tempCF(index) = projectInfo(1, 10 + index)
+        Next index
+        
+'        Call tempProject.CopyCashFlows(tempCF)
+
+        ' payment 설정
+        tempProject.firstPayment = projectInfo(1, 14)
+        tempProject.middlePayment = projectInfo(1, 15)
+        tempProject.finalPayment = projectInfo(1, 16)
+
+        tempProject.numActivities = projectInfo(2, 1)
+        tempProject.firstPaymentMonth = projectInfo(2, 11)
+        tempProject.middlePaymentMonth = projectInfo(2, 12)
+        tempProject.finalPaymentMonth = projectInfo(2, 13)
+        
+        
+        ' Activity 설정.
+        Dim tempAct As Activity_
+        
+        For index = 1 To tempProject.numActivities
+            tempAct.duration = projectInfo(1 + index, 3)
+            tempAct.startDate = projectInfo(1 + index, 4)
+            tempAct.endDate = projectInfo(1 + index, 5)
+            tempAct.highSkill = projectInfo(1 + index, 7)
+            tempAct.midSkill = projectInfo(1 + index, 8)
+            tempAct.lowSkill = projectInfo(1 + index, 9)
+            Call SetProjectActivity(tempProject, index, tempAct)
+        Next index
+        
+        Set m_projectTable(projectID) = tempProject
+        
+    Next projectID
+    
+End Function ' LoadProjects() As Boolean
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+' PROJECT_SHEET_NAME 시트에 헤더를 생성한다.
+' VB 6.0에서 Option Base 1을 사용했더라도, Split 함수는 기본적으로 0 기반 배열을 반환
+' 따라서 1 기반 배열로 변환하는 코드를 추가 함
+Public Function PrintProjectHeader()
+
+    Dim MyArray() As Variant, tempArray() As String, strHeader As String
+        
+    strHeader = "pType,PRJ_ID,기간,시작가능,끝,발주일,총수익,경험,성공%,CF갯수,CF1%,CF2%,CF3%,선금,중도,잔금"
+
+    tempArray = Split(strHeader, ",")
+    MyArray = ConvertToBase1(tempArray) ' TempArray를 1 기반 배열로 변환
+    Call PrintArrayWithLine(g_WsProject, 1, 1, MyArray)
+    
+    'strHeader = ",Dur,start,end,HR_H,HR_M,HR_L,,,mon_cf1,mon_cf2,mon_cf3,,,,"
+    strHeader = "act갯수,,Dur,start,end,,HR_H,HR_M,HR_L,,mon_cf1,mon_cf2,mon_cf3,,,,"
+    tempArray = Split(strHeader, ",")
+    MyArray = ConvertToBase1(tempArray)
+    Call PrintArrayWithLine(g_WsProject, 2, 1, MyArray)
     
 End Function
 
 
-' 디버깅 정보를 모은다.
-Private Function GetAllDebugInfo(thisWeek As Integer)
+Function PrintProjectAll()
+
+    Dim temp As clsProject
+    Dim index As Integer
+
+    For index = 1 To m_totalProjectNum
+        Set temp = m_projectTable(index)
+        Call temp.PrintProjectInfomation
+    Next index
+End Function
+
+
+
+''''''''''''''''''''''''''''''''''''''''''''''
+' print functions
+
+' 이번주 까지의 프로젝트 정보를 모은다.
+Private Function GetAllDashboardInfo(thisWeek As Integer)
     
     Dim index As Integer, j As Integer
     Dim strHeader As String
@@ -787,40 +891,40 @@ Private Function GetAllDebugInfo(thisWeek As Integer)
     tempArray = Split(strHeader, ",") ' 0 번 인덱스를 사용함에유의
     
     For index = 1 To 48
-        debugInfoArray(index + 1, 1) = tempArray(index - 1)
+        m_AllDashboardInfo(index + 1, 1) = tempArray(index - 1)
     Next
     
     ' 기간 1 ~ 156
     For index = 1 To thisWeek ' GlobalEnv.SimulationWeeks
         'orderTable
-        debugInfoArray(2, index + 1) = index
-        debugInfoArray(3, index + 1) = gOrderTable(1, index)
-        debugInfoArray(4, index + 1) = gOrderTable(1, index)
+        m_AllDashboardInfo(2, index + 1) = index
+        m_AllDashboardInfo(3, index + 1) = m_orderTable(1, index)
+        m_AllDashboardInfo(4, index + 1) = m_orderTable(1, index)
                 
         ' 투입 HR
-        debugInfoArray(7, index + 1) = doingHR_H_Table(index)
-        debugInfoArray(8, index + 1) = doingHR_M_Table(index)
-        debugInfoArray(9, index + 1) = doingHR_L_Table(index)
+        m_AllDashboardInfo(7, index + 1) = doingHR_H_Table(index)
+        m_AllDashboardInfo(8, index + 1) = doingHR_M_Table(index)
+        m_AllDashboardInfo(9, index + 1) = doingHR_L_Table(index)
         
         ' 여유 HR
-        debugInfoArray(12, index + 1) = totalHR_H_Table(index) - doingHR_H_Table(index)
-        debugInfoArray(13, index + 1) = totalHR_M_Table(index) - doingHR_M_Table(index)
-        debugInfoArray(14, index + 1) = totalHR_L_Table(index) - doingHR_L_Table(index)
+        m_AllDashboardInfo(12, index + 1) = totalHR_H_Table(index) - doingHR_H_Table(index)
+        m_AllDashboardInfo(13, index + 1) = totalHR_M_Table(index) - doingHR_M_Table(index)
+        m_AllDashboardInfo(14, index + 1) = totalHR_L_Table(index) - doingHR_L_Table(index)
         
         ' 총 HR
-        debugInfoArray(17, index + 1) = totalHR_H_Table(index)
-        debugInfoArray(18, index + 1) = totalHR_M_Table(index)
-        debugInfoArray(19, index + 1) = totalHR_L_Table(index)
+        m_AllDashboardInfo(17, index + 1) = totalHR_H_Table(index)
+        m_AllDashboardInfo(18, index + 1) = totalHR_M_Table(index)
+        m_AllDashboardInfo(19, index + 1) = totalHR_L_Table(index)
         
         ' 진행, 완료, 보류 중인 프로젝트
-        debugInfoArray(22, index + 1) = index
-        debugInfoArray(34, index + 1) = index
-        debugInfoArray(46, index + 1) = index
+        m_AllDashboardInfo(22, index + 1) = index
+        m_AllDashboardInfo(34, index + 1) = index
+        m_AllDashboardInfo(46, index + 1) = index
         
         For j = 1 To 10
-            debugInfoArray(22 + j, index + 1) = doingTable(j, index)
-            debugInfoArray(34 + j, index + 1) = doneTable(j, index)
-            debugInfoArray(46 + j, index + 1) = defferTable(j, index)
+            m_AllDashboardInfo(22 + j, index + 1) = doingTable(j, index)
+            m_AllDashboardInfo(34 + j, index + 1) = doneTable(j, index)
+            m_AllDashboardInfo(46 + j, index + 1) = defferTable(j, index)
         Next
         
     Next
@@ -828,15 +932,208 @@ Private Function GetAllDebugInfo(thisWeek As Integer)
 End Function
 
 ' 테두리를 그린다.
-Public Function DebugPrintLine(Top As Integer, Bottom As Integer)
+Public Function PrintLine(ws As Worksheet, Left As Integer, Top As Integer, Right As Integer, Bottom As Integer, isAround)
 
-    With gWsDebugInfo
+    With ws
     
         Dim rng As Object
-        Set rng = .Range(.Cells(Top, 1), .Cells(Bottom, GlobalEnv.SimulationWeeks))
-        rng.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
-        rng.Borders.LineStyle = xlContinuous
+        Set rng = .Range(.Cells(Top, Left), .Cells(Bottom, Right))
+        
+        If isAround Then
+            rng.BorderAround LineStyle:=1, Weight:=xlThin, ColorIndex:=1
+        Else
+            rng.Borders.LineStyle = xlContinuous
+            rng.Borders.Weight = xlThin
+            rng.Borders.ColorIndex = 1
+        End If
         
     End With
+    
+End Function
+
+
+' 기간이 변경되면 배열크기 수정해야 하는데 신경쓰기 싫어서 조금 크게
+Public Function PrintSimulationResults(thisWeek As Integer)
+    
+    Dim index As Integer, j As Integer
+            
+    ' 정보를 모을 배열을 초기화 한다.
+    For index = 1 To debugArrayHeight
+        For j = 1 To debugArrayWidth
+            m_AllDashboardInfo(index, j) = ""
+        Next
+    Next
+        
+    Call GetAllDashboardInfo(thisWeek) ' 정보를 모은다
+    
+    Call ClearSheet(g_WsDashboard) ' 시트를 지운다.
+        
+    With g_WsDashboard
+        
+        ' 모은 정보를 시트에 출력한다.
+        .Range(.Cells(1, 1), .Cells(debugArrayHeight, GlobalEnv.SimulationWeeks)).value = m_AllDashboardInfo
+        
+        ' 테두리를 그린다.
+        Call PrintLine(g_WsDashboard, 1, 2, GlobalEnv.SimulationWeeks, 4, False)
+        Call PrintLine(g_WsDashboard, 1, 7, GlobalEnv.SimulationWeeks, 9, False)
+        Call PrintLine(g_WsDashboard, 1, 12, GlobalEnv.SimulationWeeks, 14, False)
+        Call PrintLine(g_WsDashboard, 1, 17, GlobalEnv.SimulationWeeks, 19, False)
+        Call PrintLine(g_WsDashboard, 1, 22, GlobalEnv.SimulationWeeks, 32, False)
+        Call PrintLine(g_WsDashboard, 1, 34, GlobalEnv.SimulationWeeks, 44, False)
+        Call PrintLine(g_WsDashboard, 1, 46, GlobalEnv.SimulationWeeks, 56, False)
+        
+    End With
+    
+End Function
+
+Public Function DebugDashboard(thisWeek As Integer)
+    If Not g_SimulDebug Then
+       Exit Function
+    End If
+    Call PrintSimulationResults(thisWeek)
+End Function
+
+
+
+Private Function GetAllProjectInfo(projectCnt As Integer)
+
+    Dim index As Integer, j As Integer
+    Dim strHeader As String
+    Dim tempArray As Variant
+    Dim posY As Integer
+    Dim cProject        As clsProject
+    
+        
+    ' 1번열
+    posY = 1
+    strHeader = "pType,PRJ_ID,기간,시작가능,끝,발주일,총수익,경험,성공%,CF갯수,CF1%,CF2%,CF3%,선금,중도,잔금"
+    tempArray = Split(strHeader, ",") ' 0번 인덱스 임을 주의 하자!!!
+    For index = 1 To PRJ_SHEET_HEADER_W  ' 0번 인덱스 임을 주의 하자!!!
+        m_AllProjectInfo(posY, index) = tempArray(index - 1) ' 0번 인덱스 임을 주의 하자!!!
+    Next
+    
+    ' 2번열
+    posY = posY + 1
+    strHeader = "act갯수,,Dur,start,end,,HR_H,HR_M,HR_L,,mon_cf1,mon_cf2,mon_cf3,,,,"
+    tempArray = Split(strHeader, ",")
+    For index = 1 To PRJ_SHEET_HEADER_W  ' 0번 인덱스 임을 주의 하자!!!
+        m_AllProjectInfo(posY, index) = tempArray(index - 1) ' 0번 인덱스 임을 주의 하자!!!
+    Next
+    
+    ' 프로젝트 정보
+    For index = 1 To projectCnt ' GlobalEnv.SimulationWeeks
+    
+        posY = PROJECT_TABLE_INDEX + (index - 1) * PRJ_SHEET_HEADER_H + 1
+        Set cProject = m_projectTable(index)
+        Call GetProjectInfomation(posY, cProject)
+        
+    Next
+        
+End Function
+
+
+' 프로젝트의 정보들을 출력을 위한 배열에 옮겨 적는다.
+Public Function GetProjectInfomation(posY As Integer, cProject As clsProject)
+
+    Dim index As Integer
+    Dim posX As Integer
+    Dim cashFlow(MAX_N_CF) As Integer
+    Dim activity As Activity_
+
+    posX = 1: m_AllProjectInfo(posY, posX) = cProject.projectType
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.projectNum
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.projectDuration
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.possiblestartDate
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.endDate
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.orderDate
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.profit
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.experience
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.successProbability
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.numCashFlows
+    
+    Call cProject.CopyFromCashFlows(cashFlow)
+    For index = 1 To MAX_N_CF
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = cashFlow(index)
+    Next index
+
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.firstPayment
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.middlePayment
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.finalPayment
+
+
+    posX = 1: posY = 2: m_AllProjectInfo(posY, posX) = cProject.numActivities
+    posX = posX + 10: m_AllProjectInfo(posY, posX) = cProject.firstPaymentMonth
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.middlePaymentMonth
+    posX = posX + 1: m_AllProjectInfo(posY, posX) = cProject.finalPaymentMonth
+   
+    For index = 1 To cProject.numActivities
+        Dim strAct As String, strNum As String
+        strNum = Format(index, "#0")
+        strAct = "Activity" & strNum
+
+        activity = GetProjectActivity(cProject, index)
+        
+        posX = 2:        m_AllProjectInfo(posY, posX) = strAct
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = activity.duration
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = activity.startDate
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = activity.endDate
+        
+        posX = posX + 2: m_AllProjectInfo(posY, posX) = activity.highSkill
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = activity.midSkill
+        posX = posX + 1: m_AllProjectInfo(posY, posX) = activity.lowSkill
+        
+        posY = posY + 1
+    Next index
+    
+    GetProjectInfomation = posY
+      
+End Function
+
+
+Public Function PrintCreateProjectResults(thisWeek As Integer)
+    
+    Dim index As Integer, j As Integer
+    Dim row As Integer
+    
+    row = PROJECT_TABLE_INDEX + m_totalProjectNum * PRJ_SHEET_HEADER_H
+    
+    ReDim m_AllProjectInfo(row, PRJ_SHEET_HEADER_W)
+                
+    ' 정보를 모을 배열을 초기화 한다.
+    For index = 1 To row
+        For j = 1 To PRJ_SHEET_HEADER_W
+            m_AllProjectInfo(index, j) = ""
+        Next
+    Next
+        
+    Call GetAllProjectInfo(thisWeek) ' 정보를 모은다
+        
+    Call ClearSheet(g_WsProject) ' 시트를 지운다.
+        
+    With g_WsProject
+        
+        ' 모은 정보를 시트에 출력한다.
+        .Range(.Cells(1, 1), .Cells(debugArrayHeight, GlobalEnv.SimulationWeeks)).value = m_AllProjectInfo
+        
+        ' 헤더의 테두리를 그린다.
+        Call PrintLine(g_WsProject, 1, 1, PRJ_SHEET_HEADER_W, 2, False)
+        
+        For index = 1 To m_totalProjectNum
+            row = PROJECT_TABLE_INDEX + 1 + (index - 1) * PRJ_SHEET_HEADER_H ' 헤더사이즈 + 공간 1 + project 정보의 크기
+            Call PrintLine(g_WsProject, 1, row, PRJ_SHEET_HEADER_W, row + PRJ_SHEET_HEADER_H - 1, True)
+        Next
+        
+    End With
+    
+End Function
+
+
+Public Function DebugProjectSheet(thisWeek As Integer)
+
+    If Not g_ProjDebug Then
+       Exit Function
+    End If
+    
+    Call PrintCreateProjectResults(thisWeek)
     
 End Function
