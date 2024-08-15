@@ -133,7 +133,6 @@ Public Sub Init(Id As Integer)
         totalHR_L_Table(index) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
     Next
 
-
     ReDim m_AllDashboardInfo(1 To debugArrayHeight, 1 To debugArrayWidth)
     
 End Sub
@@ -198,39 +197,42 @@ Private Function SelectNewProject(thisWeek As Integer)
         Exit Function
     End If
     
-    cnt = m_orderTable(2, thisWeek)
-    If cnt = 0 Then ' 이번주에 발주된 프로젝트가 없다.
-        Exit Function
-    End If
-
-    startProjectNum = m_orderTable(1, thisWeek) + 1  ' 이번기간에 처음 프로젝트
-    endProjectNum = m_orderTable(1, thisWeek) + cnt  ' 이번기간의 마지막 프로젝트
-
-    ' song ==> 일단 모든 프로젝트를 다 하는것으로 하자. 추후 조건을 추가한다. 인원, 정책
-    For Id = startProjectNum To endProjectNum
-
-        Set cProject = m_projectTable(Id)
-        
-        If cProject.projectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
-
-        ' song ==> 프로젝트를 선택할지 말지 결정하는 루틴이 필요함. 현재는 모두 선택하는 것으로
-        Else
-            cProject.startDate = cProject.possiblestartDate
-            
-            ' song 시뮬레이션 기간 이후에 시작되는 프로젝트는 무시한다.
-            If cProject.startDate > GlobalEnv.SimulationWeeks Then
-                Exit Function
-            End If
-            
-            ' song 프로젝트 추가시 Call AddWorkProject(cProject) '프로젝트 관리 테이블들, 프로젝트와 관련된 테이블들 모두 업데이트 하는 코드로 변경예정
-            Call AddProjectEntry(doingTable, doingTableSize, cProject.startDate, cProject.projectNum) ' Doing table에 추가
-            Call AddProjectHR(thisWeek, cProject) ' 이번주부터 해당 프로젝트에 투입되는 인력정보 갱신
-            
-            ' 프로젝트 완료시 Call RemoveHrTable(cProject) ' HR Table에서 인력 정보를 제거한다.
-            
+    Dim index As Integer
+    index = 1
+    
+    ' 후보 프로젝트가 없을때 까지
+    Do
+        Id = candidateTable(index)
+        If Id = 0 Then
+            Exit Do
         End If
-    Next
+        
+        Set cProject = m_projectTable(Id)
+                
+        If IsEnoughHR(thisWeek, cProject) Then ' 진행가능하면 선택한다.
+                        
+            If cProject.projectType = P_TYPE_INTERNAL Then   ' 내부프로젝트이면
 
+            ' song ==> 프로젝트를 선택할지 말지 결정하는 루틴이 필요함. 현재는 인원 문제가 없으면 모두 선택하는 것으로
+            Else
+                cProject.isStart = cProject.possiblestartDate
+                
+                ' song 시뮬레이션 기간 이후에 시작되는 프로젝트는 무시한다.
+                If cProject.possiblestartDate < GlobalEnv.SimulationWeeks Then
+                    ' song 프로젝트 추가시 Call AddWorkProject(cProject) '프로젝트 관리 테이블들, 프로젝트와 관련된 테이블들 모두 업데이트 하는 코드로 변경예정
+                    doingTableSize = AddProjectEntry(doingTable, doingTableSize, cProject.isStart, cProject.projectNum) ' Doing table에 추가
+                    Call AddProjectHR(thisWeek, cProject) ' 이번주부터 해당 프로젝트에 투입되는 인력정보 갱신
+                End If
+                ' 프로젝트 완료시 Call RemoveHrTable(cProject) ' HR Table에서 인력 정보를 제거한다.
+            End If
+        
+        End If
+        
+        index = index + 1
+        
+    Loop Until Id = 0
+    
+    
 End Function
 
 '' 신규프로젝트를 할 수 있는 인원이 있는가?
@@ -265,14 +267,9 @@ Private Function CheckLastWeek(thisWeek As Integer)
         Exit Function
     End If
 
-    ' 지난 기간의 정보를 이번기간에 복사하고
-    'Call CopyLastToCurrent(doingTable, thisWeek, cnt)
-
-
     Dim writePos As Integer
     writePos = 2 ' 첫줄은 "누계"를 기록하므로 2행부터
-    
-    '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
+
     For index = 1 To cnt
 
         Id = doingTable(index + 1, thisWeek - 1) ' 지난주 정보
@@ -284,15 +281,11 @@ Private Function CheckLastWeek(thisWeek As Integer)
         Set cProject = m_projectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
         
         If cProject.projectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
-        
             ' 프로젝트 Object 검사
-            If thisWeek < (cProject.startDate + cProject.projectDuration - 1) Then ' 아직 안끝났으면
-                'Call RemoveFromTable(doingTable, doingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
-                'index = index - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
-                If IsEnoughHR(thisWeek, cProject) Then
-                    doingTable(writePos, thisWeek) = cProject.projectNum
-                    writePos = writePos + 1
-                End If
+            If thisWeek < (cProject.isStart + cProject.projectDuration - 1) Then ' 아직 안끝났으면
+                doingTableSize = AddProjectEntry(doneTable, doneTableSize, thisWeek, cProject.projectNum)
+            Else ' 종료된 프로젝트면
+                '특별히 할일은 없다. 시작시 모두 기록
             End If
         Else
             Debug.Print "내부 프로젝트"
@@ -351,27 +344,32 @@ End Function
 ' 테이블의 week에 projectID 를 추가한다.
 ' 테이블의 크기를 벗어나면 테이블의 크기를 변경한다.
 ' tableSize 를 변경한다. (리턴함)
-Public Function AddProjectEntry(Table As Variant, TableRow As Integer, addWeek As Integer, projectID As Integer) As Integer
+Public Function AddProjectEntry(Table As Variant, TableRowSize As Integer, addWeek As Integer, projectID As Integer) As Integer
 
     Dim addRow As Integer ' ProjectId를 기록할 행번호
     
-    ' 1번행은 해더(누계)   addRow = 현재 주(week)의 누계 + 헤더(누계) 1행 + 다음 1행
-    addRow = Table(1, addWeek) + 2
+    ' 1번행은 해더(누계)가기록되므로   addRow = 현재 주(week)의 누계 + 다음 1행 + 1번인덱스문제 1
+    addRow = Table(1, addWeek)
+    addRow = addRow + 2
     
     ' 추가할 행이 테이블의 끝을 벗어나면 배열을 다시 할당
-    If addRow >= TableRow Then
-        TableRow = addRow '  리턴해주고 있지만 안전하게 원본인 멤버변수도 변경한다. ByRef
-        Call Resize2DArray(Table, TableRow, GlobalEnv.SimulationWeeks)
+    If addRow >= TableRowSize Then
+        TableRowSize = addRow '  리턴해주고 있지만 안전하게 원본인 멤버변수도 변경한다. ByRef
+        Call Resize2DArray(Table, TableRowSize, GlobalEnv.SimulationWeeks)
     End If
     
     ' 프로젝트 ID를 Table의 next 위치에 추가
     Table(addRow, addWeek) = projectID
     
     ' 첫 번째 행의 값을 1 증가시켜 누계를 업데이트
-    Table(1, addWeek) = Table(1, addWeek) + 1
+    sum = Table(1, addWeek)
+    sum = sum + 1
+    Table(1, addWeek) = sum
+    'Table(1, addWeek) = Table(1, addWeek) + 1
     
     ' 최종 변경된 행의 크기를 반환
-    AddProjectEntry = TableRow
+    AddProjectEntry = TableRowSize
+    
     
 End Function
 
@@ -929,7 +927,7 @@ Private Function GetAllDashboardInfo(thisWeek As Integer)
         'orderTable
         m_AllDashboardInfo(2, index + 1) = index
         m_AllDashboardInfo(3, index + 1) = m_orderTable(1, index)
-        m_AllDashboardInfo(4, index + 1) = m_orderTable(1, index)
+        m_AllDashboardInfo(4, index + 1) = m_orderTable(2, index)
                 
         ' 투입 HR
         m_AllDashboardInfo(7, index + 1) = doingHR_H_Table(index)
@@ -994,7 +992,13 @@ Public Function PrintSimulationResults(thisWeek As Integer)
         Next
     Next
         
-    Call GetAllDashboardInfo(thisWeek) ' 정보를 모은다
+        
+    If Not g_SimulDebug Then
+        Call GetAllDashboardInfo(thisWeek) ' 정보를 모은다
+    Else
+        Call GetAllDashboardInfo(GlobalEnv.SimulationWeeks) ' 정보를 모은다
+    End If
+    
     
     Call ClearSheet(g_WsDashboard) ' 시트를 지운다.
         

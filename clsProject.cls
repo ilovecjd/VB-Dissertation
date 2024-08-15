@@ -23,7 +23,7 @@ Public orderDate                As Integer  ' 발주일
 Public possiblestartDate        As Integer  ' 시작 가능일
 Public endDate                  As Integer  ' 프로젝트 종료일
 Public projectDuration          As Integer  ' 프로젝트의 총 기간
-Public startDate                As Integer  ' 시작일 (0: 미시작)
+Public isStart                  As Integer  ' 진행 여부 (0: 미진행, 나머지: 진행시작한 주)
 Public profit                   As Double   ' 총 기대 수익 (HR 종속)
 Public experience               As Integer  ' 경험 (0: 무경험 1: 유경험)
 Public successProbability       As Integer  ' 성공 확률
@@ -200,7 +200,7 @@ Public Sub Init(initType As Integer, initNum As Integer, ODate As Integer)
     ' 프로젝트 생성을 위해 필요한 값들을 생성한다.
     orderDate = ODate ' 발주일
     possiblestartDate = ODate + Int(Rnd() * 4) ' 시작 가능일
-    startDate = 0 ' 시작여부 (0: 미시작) ' song 변수명 변경하자
+    isStart = 0 ' 시작여부 (0: 미시작) ' song 변수명 변경하자
     'profit                 = 100   ' 총 기대 수익 (HR 종속 MakeProjectHRandprofit 함수에서 생성)
     experience = GenerateWithProbability(95) ' 경험 (0: 무경험 1: 유경험)
     successProbability = 100 '   song 수주 성공 확률
