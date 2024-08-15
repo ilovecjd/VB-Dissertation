@@ -126,9 +126,13 @@ Public Sub Init(Id As Integer)
     ReDim totalHR_M_Table(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 중급자
     ReDim totalHR_L_Table(1 To GlobalEnv.Hr_TableSize)  ' 회사가 보유한 모든 초급자
 
-    totalHR_H_Table(1) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 초기화
-    totalHR_M_Table(1) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
-    totalHR_L_Table(1) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
+    Dim index As Integer
+    For index = 1 To GlobalEnv.Hr_TableSize
+        totalHR_H_Table(index) = GlobalEnv.Hr_Init_H    ' 회사가 보유한 상급자 초기화
+        totalHR_M_Table(index) = GlobalEnv.Hr_Init_M    ' 회사가 보유한 중급자 초기화
+        totalHR_L_Table(index) = GlobalEnv.Hr_Init_L    ' 회사가 보유한 초급자 초기화
+    Next
+
 
     ReDim m_AllDashboardInfo(1 To debugArrayHeight, 1 To debugArrayWidth)
     
@@ -262,12 +266,16 @@ Private Function CheckLastWeek(thisWeek As Integer)
     End If
 
     ' 지난 기간의 정보를 이번기간에 복사하고
-    Call CopyLastToCurrent(doingTable, thisWeek, cnt)
+    'Call CopyLastToCurrent(doingTable, thisWeek, cnt)
 
+
+    Dim writePos As Integer
+    writePos = 2 ' 첫줄은 "누계"를 기록하므로 2행부터
+    
     '복사된 정보에서 지난 기간에 완료된 프로젝트는 삭제한다.
     For index = 1 To cnt
 
-        Id = doingTable(index + 1, thisWeek) ' 프로젝트 객체의 ID를 가져온다
+        Id = doingTable(index + 1, thisWeek - 1) ' 지난주 정보
 
         If Id = 0 Then
             Exit For
@@ -278,11 +286,14 @@ Private Function CheckLastWeek(thisWeek As Integer)
         If cProject.projectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
         
             ' 프로젝트 Object 검사
-            If thisWeek = (cProject.startDate + cProject.projectDuration - 1) Then ' 지난번에 끝났으면
-                Call RemoveFromTable(doingTable, doingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
-                index = index - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
+            If thisWeek < (cProject.startDate + cProject.projectDuration - 1) Then ' 아직 안끝났으면
+                'Call RemoveFromTable(doingTable, doingTableSize, thisWeek, cProject.projectNum) ' doing table에서 삭제
+                'index = index - 1 ' 이번 행을 삭제하고 아래것을 가져왔으므로 이번 행부터 이어서 검사해야 한다.
+                If IsEnoughHR(thisWeek, cProject) Then
+                    doingTable(writePos, thisWeek) = cProject.projectNum
+                    writePos = writePos + 1
+                End If
             End If
-            
         Else
             Debug.Print "내부 프로젝트"
             
@@ -494,7 +505,7 @@ Function SelectionOfCandidates(thisWeek As Integer)
     
 End Function
 
-
+ 
 
 
 
@@ -562,17 +573,17 @@ Function IsEnoughHR(thisWeek As Integer, cProject As clsProject) As Boolean
     ' 코딩 편의상 모든 기간을 체크한다.
     For index = 1 To GlobalEnv.Hr_TableSize
     
-        If tempH_Table(index) > doingHR_H_Table(index) Then
+        If tempH_Table(index) > totalHR_H_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
         
-        If tempM_Table(index) > doingHR_M_Table(index) Then
+        If tempM_Table(index) > totalHR_M_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
         
-        If tempL_Table(index) > doingHR_L_Table(index) Then
+        If tempL_Table(index) > totalHR_L_Table(index) Then
             IsEnoughHR = False
             Exit Function
         End If
