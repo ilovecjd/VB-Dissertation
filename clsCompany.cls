@@ -17,19 +17,24 @@ Option Base 1
 Private m_orderTable()      As Variant  ' 주별 발주 프로젝트의 누계와 주차별 갯수, week 갯수 가변
 Private m_projectTable()    As Variant  ' 발주된 모든 프로젝트 object 를 보관, 가변
 
-Public m_totalProjectNum   As Integer  ' 발주된 프로젝트의 총 갯수
+Public m_totalProjectNum    As Integer  ' 발주된 프로젝트의 총 갯수
+
+Public m_totalIncome        As Long     ' 총 수입
+Public m_Totalcosts         As Long     ' 총 지출
+
+Private m_incomeTable()     As Long     ' 기간별 총 수입
+Private m_costsTable()      As Long  ' 기간별 총 지출
 
 
+Private doingTable()        As Integer  ' 기간별로 진행중인 프로젝트들의 ID를 관리하는 테이블
+Private doneTable()         As Integer  ' 기간별로 완료된 프로젝트들의 ID를 관리하는 테이블
+Private defferTable()       As Integer  ' 기간별로 보류된 프로젝트들의 ID를 관리하는 테이블
 
-Private doingTable()     As Integer  ' 기간별로 진행중인 프로젝트들의 ID를 관리하는 테이블
-Private doneTable()      As Integer  ' 기간별로 완료된 프로젝트들의 ID를 관리하는 테이블
-Private defferTable()    As Integer  ' 기간별로 보류된 프로젝트들의 ID를 관리하는 테이블
+Private candidateTable()    As Integer   ' 후보　프로젝트들의 ID를 관리하는 테이블
 
-Private candidateTable() As Integer   ' 후보　프로젝트들의 ID를 관리하는 테이블
-
-Public doingTableSize    As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
-Public doneTableSize     As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
-Public defferTableSize   As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public doingTableSize       As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public doneTableSize        As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
+Public defferTableSize      As Integer      ' DoneTable의 현재크기 song ==> 동적으로 수정하자.
 
 Private doingHR_H_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 상급자
 Private doingHR_M_Table()  As Integer  ' 기간별로 진행중인 프로젝트에 투입된 중급자
@@ -117,6 +122,10 @@ Public Sub Init(Id As Integer)
     ReDim defferTable(1 To defferTableSize, 1 To GlobalEnv.SimulationWeeks)   ' 보류된 프로젝트들의 ID를 관리하는 테이블
     
     ReDim candidateTable(1 To MAX_CANDIDATES) ' 후보 프로젝트들의 ID를 관리하는 테이블
+    
+    ReDim m_incomeTable(1 To GlobalEnv.SimulationWeeks)  ' 수입 관리 테이블
+    ReDim m_costsTable(1 To GlobalEnv.SimulationWeeks)  ' 지출 관리 테이블
+    
     
     ReDim doingHR_H_Table(1 To GlobalEnv.Hr_TableSize)  ' 프로젝트에 투입된 상급자
     ReDim doingHR_M_Table(1 To GlobalEnv.Hr_TableSize)  ' 프로젝트에 투입된 중급자
@@ -257,7 +266,10 @@ Private Function CheckLastWeek(thisWeek As Integer)
     Dim index       As Integer
     Dim Id      As Integer
 
-
+    ' 수입과 지출 테이블은 매주 업데이트 한다.
+    m_incomeTable(thisWeek) = m_totalIncome
+    m_costsTable(thisWeek) = m_Totalcosts
+    
     If thisWeek = 1 Then ' song ==> 현재까지 코드에서는 처음 시작에는 지난주가 없다
         Exit Function
     End If
@@ -281,11 +293,26 @@ Private Function CheckLastWeek(thisWeek As Integer)
         Set cProject = m_projectTable(Id) ' ID에 해당하는 projct 객체를 가져온다.
         
         If cProject.projectType = P_TYPE_EXTERNAL Then   ' 외내부프로젝트이면
-            ' 프로젝트 Object 검사
+        
+            ' 1. payment 를 계산한다. 선금은 시작시 받기로 한다. 조건완료후 1주 후 수금
+            If (cProject.isStart + cProject.firstPaymentMonth) = thisWeek Then
+                m_totalIncome = m_totalIncome + cProject.firstPayment
+                m_incomeTable(thisWeek) = m_totalIncome
+            ElseIf (cProject.isStart + cProject.middlePaymentMonth) = thisWeek Then
+                m_totalIncome = m_totalIncome + cProject.middlePayment
+                m_incomeTable(thisWeek) = m_totalIncome
+            ElseIf (cProject.isStart + cProject.finalPaymentMonth) = thisWeek Then
+                m_totalIncome = m_totalIncome + cProject.finalPayment
+                m_incomeTable(thisWeek) = m_totalIncome
+            End If
+                      
+            ' 2. 지출을 계산한다.
+            
+            ' 3. 진행중인 프로젝트를 이관해서 기록한다.
             If thisWeek < (cProject.isStart + cProject.projectDuration - 1) Then ' 아직 안끝났으면
-                doingTableSize = AddProjectEntry(doneTable, doneTableSize, thisWeek, cProject.projectNum)
+                doingTableSize = AddProjectEntry(doingTable, doingTableSize, thisWeek, cProject.projectNum)
             Else ' 종료된 프로젝트면
-                '특별히 할일은 없다. 시작시 모두 기록
+                '지금은 특별히 할일은 없다. 프로젝트와 관련된 정보는 시작시 모두 기록
             End If
         Else
             Debug.Print "내부 프로젝트"
@@ -362,6 +389,7 @@ Public Function AddProjectEntry(Table As Variant, TableRowSize As Integer, addWe
     Table(addRow, addWeek) = projectID
     
     ' 첫 번째 행의 값을 1 증가시켜 누계를 업데이트
+    Dim sum As Integer
     sum = Table(1, addWeek)
     sum = sum + 1
     Table(1, addWeek) = sum
@@ -642,7 +670,7 @@ Function AddProjectHR(thisWeek As Integer, cProject As clsProject)
         Next
         
     Next
-    
+        
         
     ' HR_H의 테이블을 갱신한다.
     ' 정보 테이블에 정보를 기록한다.
@@ -915,7 +943,7 @@ Private Function GetAllDashboardInfo(thisWeek As Integer)
     Dim tempArray As Variant
     
     ' 1번열 완성
-    strHeader = "주,누계,발주,,투입,HR_H,HR_M,HR_L,,여유,HR_H,HR_M,HR_L,,총원,HR_H,HR_M,HR_L,,,주,누계,prjNum,,,,,,,,,,주,누계,prjNum,,,,,,,,,,주,누계,prjNum,,,,,,,,,,"
+    strHeader = "주,누계,발주,,투입,HR_H,HR_M,HR_L,,여유,HR_H,HR_M,HR_L,,총원,HR_H,HR_M,HR_L,,수익,주,누계,prjNum,,,,,,,,,,주,누계,prjNum,,,,,,,,,,주,누계,prjNum,,,,,,,,,,"
     tempArray = Split(strHeader, ",") ' 0 번 인덱스를 사용함에유의
     
     For index = 1 To 48
@@ -943,6 +971,9 @@ Private Function GetAllDashboardInfo(thisWeek As Integer)
         m_AllDashboardInfo(17, index + 1) = totalHR_H_Table(index)
         m_AllDashboardInfo(18, index + 1) = totalHR_M_Table(index)
         m_AllDashboardInfo(19, index + 1) = totalHR_L_Table(index)
+        
+        ' 수익
+        m_AllDashboardInfo(21, index + 1) = m_incomeTable(index)
         
         ' 진행, 완료, 보류 중인 프로젝트
         m_AllDashboardInfo(22, index + 1) = index
